@@ -1,5 +1,10 @@
-setState 7 2 4 5 0 6 8 3 1
-printState
+scrambleState 20
+move left
+move up
+move right
 move down
 move left
+move up
+printState
+setState 7 2 4 5 0 6 8 3 1
 printState

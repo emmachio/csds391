@@ -52,6 +52,7 @@ def printState():
     board = [line1, line2, line3]
     for row in board:
         print(row)
+    print("")
 
 # move function where it moves in the direction specified unless it is not possible
 def move(direction):
@@ -64,12 +65,12 @@ def move(direction):
     if direction == "up":
         if blankTile-3 < 0:
             print("Error: Invalid move")
-            exit()
+            return "Error: Invalid move"
         else:
             puzzle[blankTile]= puzzle[blankTile-3]
             puzzle[blankTile-3]=0
             blankTile = blankTile-3
-            print("Blank tile successfully moved up: \n")
+            print("Blank tile successfully moved up:")
             printState()
     # if the tile goes down, then it's index increases by 3 but if it goes above 8, then that means the blank
     # tile is on the last row and cannot be moved down, thus an invalid move, otherwise a switch of values will occur
@@ -77,12 +78,12 @@ def move(direction):
     elif direction == "down":
         if blankTile+3 > 8:
              print("Error: Invalid move")
-             exit()
+             return "Error: Invalid move"
         else:
             puzzle[blankTile]= puzzle[blankTile+3]
             puzzle[blankTile+3]=0
             blankTile = blankTile+3
-            print("Blank tile successfully moved down: \n")
+            print("Blank tile successfully moved down:")
             printState()
     # if the tile goes left, then it's index decreases by 1 but if index modulo 3 is equal to 0, then that means the blank
     # tile is on the left most column and cannot be moved left, thus an invalid move, otherwise a switch of values will occur
@@ -90,12 +91,12 @@ def move(direction):
     elif direction == "left":
         if blankTile%3==0:
             print("Error: Invalid move")
-            exit()
+            return "Error: Invalid move"
         else:
             puzzle[blankTile]= puzzle[blankTile-1]
             puzzle[blankTile-1]=0
             blankTile = blankTile-1
-            print("Blank tile successfully moved left: \n")
+            print("Blank tile successfully moved left:")
             printState()
     # if the tile goes right, then it's index increases by 1 but if index modulo 3 is equal to 2, then that means the blank
     # tile is on the right most column and cannot be moved right, thus an invalid move, otherwise a switch of values will occur
@@ -103,13 +104,58 @@ def move(direction):
     elif direction == "right":
         if blankTile%3==2:
             print("Error: Invalid move")
-            exit()
+            return "Error: Invalid move"
         else:
             puzzle[blankTile]= puzzle[blankTile+1]
             puzzle[blankTile+1]=0
             blankTile = blankTile+1
-            print("Blank tile successfully moved right: \n")
+            print("Blank tile successfully moved right:")
             printState()
+
+def helperMove(direction):
+    global puzzle
+    global blankTile
+    result = ""
+    # if the tile goes up, then it's index decreases by 3 but if it goes below 0, then that means the blank
+    # tile is on the first row and cannot be moved up, thus an invalid move, otherwise a switch of values will occur
+    # which will act as the tile moving up
+    if direction == "up":
+        if blankTile-3 < 0:
+            return "Error: Invalid move"
+        else:
+            puzzle[blankTile]= puzzle[blankTile-3]
+            puzzle[blankTile-3]=0
+            blankTile = blankTile-3
+    # if the tile goes down, then it's index increases by 3 but if it goes above 8, then that means the blank
+    # tile is on the last row and cannot be moved down, thus an invalid move, otherwise a switch of values will occur
+    # which will act as the tile moving down
+    elif direction == "down":
+        if blankTile+3 > 8:
+            return "Error: Invalid move"
+        else:
+            puzzle[blankTile]= puzzle[blankTile+3]
+            puzzle[blankTile+3]=0
+            blankTile = blankTile+3
+    # if the tile goes left, then it's index decreases by 1 but if index modulo 3 is equal to 0, then that means the blank
+    # tile is on the left most column and cannot be moved left, thus an invalid move, otherwise a switch of values will occur
+    # which will act as the tile moving left
+    elif direction == "left":
+        if blankTile%3==0:
+            return "Error: Invalid move"
+        else:
+            puzzle[blankTile]= puzzle[blankTile-1]
+            puzzle[blankTile-1]=0
+            blankTile = blankTile-1
+    # if the tile goes right, then it's index increases by 1 but if index modulo 3 is equal to 2, then that means the blank
+    # tile is on the right most column and cannot be moved right, thus an invalid move, otherwise a switch of values will occur
+    # which will act as the tile moving right
+    elif direction == "right":
+        if blankTile%3==2:
+            return "Error: Invalid move"
+        else:
+            puzzle[blankTile]= puzzle[blankTile+1]
+            puzzle[blankTile+1]=0
+            blankTile = blankTile+1
 
 # command scrambleState which will move the blank tile in a random direction as generated by the random function
 # As the goal state is not always achievable, we begin with the goal state and move the blank tile from there
@@ -118,21 +164,23 @@ def move(direction):
 def scrambleState(n):
     setState("0 1 2 3 4 5 6 7 8")
     i=0
+    random.seed(42)
     while(i < n):
         randomValue=random.randint(1,4)
         if randomValue % 4 == 0:
-            if move("up") == "Error: Invalid move":
+            if helperMove("up") == "Error: Invalid move":
                 n+=1
         elif randomValue % 4 == 1:
-            if move("down") == "Error: Invalid move":
+            if helperMove("down") == "Error: Invalid move":
                 n+=1
         elif randomValue % 4 == 2:
-            if move("left") == "Error: Invalid move":
+            if helperMove("left") == "Error: Invalid move":
                 n+=1
         elif randomValue % 4 == 3:
-            if move("right") == "Error: Invalid move":
+            if helperMove("right") == "Error: Invalid move":
                 n+=1
         i+=1
+    printState()
 
 # command function where it takes a command string and the required input as an input
 def cmd(commandString):
@@ -151,11 +199,10 @@ def cmd(commandString):
         move(inputs)
     # if the command is scrambleState, calling the function with the desired number of scrambled moves
     elif command == "scrambleState":
-        scrambleState(inputs)
+        scrambleState(int(inputs))
     # if the command is printState, calling the function printState
     # putting a space before so in the instance of two printState's they will not merge
     elif command == "printState":
-        print("\n")
         printState()
     # if the command is none of the above, error message is given with the invalid command
     else:
