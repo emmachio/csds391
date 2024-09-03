@@ -1,0 +1,44 @@
+puzzle state set
+Current state of board:
+[4, 3, 2]
+[1, ' ', 5]
+[6, 7, 8]
+Blank tile successfully moved left:
+Current state of board:
+[4, 3, 2]
+[' ', 1, 5]
+[6, 7, 8]
+Blank tile successfully moved up:
+Current state of board:
+[' ', 3, 2]
+[4, 1, 5]
+[6, 7, 8]
+Blank tile successfully moved right:
+Current state of board:
+[3, ' ', 2]
+[4, 1, 5]
+[6, 7, 8]
+Blank tile successfully moved down:
+Current state of board:
+[3, 1, 2]
+[4, ' ', 5]
+[6, 7, 8]
+Blank tile successfully moved left:
+Current state of board:
+[3, 1, 2]
+[' ', 4, 5]
+[6, 7, 8]
+Blank tile successfully moved up:
+Current state of board:
+[' ', 1, 2]
+[3, 4, 5]
+[6, 7, 8]
+Current state of board:
+[' ', 1, 2]
+[3, 4, 5]
+[6, 7, 8]
+puzzle state set
+Current state of board:
+[7, 2, 4]
+[5, ' ', 6]
+[8, 3, 1]

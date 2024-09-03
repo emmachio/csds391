@@ -1,0 +1,22 @@
+puzzle state set
+Current state of board:
+[' ', 1, 2]
+[3, 4, 5]
+[6, 7, 8]
+Error: Invalid move
+Error: Invalid move
+Current state of board:
+[' ', 1, 2]
+[3, 4, 5]
+[6, 7, 8]
+puzzle state set
+Current state of board:
+[1, 2, 3]
+[4, 5, 6]
+[7, 8, ' ']
+Error: Invalid move
+Error: Invalid move
+Current state of board:
+[1, 2, 3]
+[4, 5, 6]
+[7, 8, ' ']
