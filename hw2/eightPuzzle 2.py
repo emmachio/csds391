@@ -345,27 +345,90 @@ class linkedList:
         current.setNext(addedNode)
         self.size = self.size + 1
 
-def dsfRecursive(startState, goalState, limit, direction):
-    initialNode = Node(startState, -1)
+    def contains(self, givenNode):
+        current = self.first
+        while (current.hasNext()):
+            current = current.getNext()
+            if current.getState().equals(givenNode.getState()):
+                return True
+        return False
+
+def dsfIterative(startState, goalState, limit):
+    initialNode = Node(startState, "initial")
+    visited = linkedList(initialNode)
+    current = initialNode
     if goalState.equals(startState):
         return initialNode
-    elif limit == 1:
+    elif limit <= 0:
+        return "failed"
+    else:
+        while not visited.contains(current):
+            upArray = current.getState().moveResult("up")
+            while not isinstance(str, upArray):
+                upNode = Node(upArray, "up")
+                upNode.setPrev(current)
+                current = upNode
+            visited.add(current)
+
+
+
+def dsfRecursive(startState, goalState, limit, direction, visited):
+    initialNode = Node(startState, "initial")
+    print("direction",limit,direction)
+    if goalState.equals(startState):
+        return initialNode
+    elif limit == 0:
         return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
     else:
-
         cutOff = False
         # current is the Node of the current state we are in
         current = Node(startState, direction)
-        upArray = current.getState().moveResult("up")
-        if not isinstance(upArray, str):
-            upPuzzle = Puzzle(upArray)
-            result = dsfRecursive(upPuzzle, goalState, limit-1, "up")
-            if result.moveDone == "failed":
-                cutOff = True
-            elif result.puzzle.equals(Puzzle([0,0,0,0,0,0,0,0,0])):
-                return result
-        else:
-            return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
+        if not visited.contains(current):
+            if direction != "right":
+                print("move  left")
+                leftArray = current.getState().moveResult("left")
+                if not isinstance(leftArray, str):
+                    leftPuzzle = Puzzle(leftArray)
+                    result = dsfRecursive(leftPuzzle, goalState, limit-1, "left", visited)
+                    return result
+                else:
+                    cutOff = True
+                    return current
+
+            if direction != "left":
+                print("move  right")
+                rightArray = current.getState().moveResult("right")
+                if not isinstance(rightArray, str):
+                    rightPuzzle = Puzzle(rightArray)
+                    result = dsfRecursive(rightPuzzle, goalState, limit-1, "right", visited)
+                    return result
+                else:
+                    cutOff = True
+                    return current
+
+            if direction != "down":
+                print("move up")
+                upArray = current.getState().moveResult("up")
+                if not isinstance(upArray, str):
+                    upPuzzle = Puzzle(upArray)
+                    result = dsfRecursive(upPuzzle, goalState, limit-1, "up", visited)
+                    return result
+                else:
+                    cutOff = True
+                    return current
+
+            if direction != "up":
+                print("move down")
+                downArray = current.getState().moveResult("down")
+                if not isinstance(downArray, str):
+                    downPuzzle = Puzzle(downArray)
+                    result = dsfRecursive(downPuzzle, goalState, limit-1, "down", visited)
+                    return result
+                else:
+                    cutOff = True
+                    return current
+            visited.add(current)
+    return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
 
 def bsfSearch(startState, maxNode):
     goalState = Puzzle([0,1,2,3,4,5,6,7,8])
@@ -387,7 +450,7 @@ def bsfSearchHelper(goalState, startState, maxNode):
         frontier = deque([])
         frontierSize = 0
         # reached is a queue of Puzzles
-        reached = deque([])
+        reached = linkedList()
         # add the initialNode into the frontier and reached array
         frontier.append(initialNode)
         frontierSize = frontierSize+1
@@ -397,42 +460,9 @@ def bsfSearchHelper(goalState, startState, maxNode):
         frontierSize = frontierSize-1
         # print(current.getState().printState())
 
-        # out of the four states that are possible, checking up
-        upArray = current.getState().moveResult("up")
-        if not isinstance(upArray, str):
-            # print("up test")
-            upPuzzle = Puzzle(upArray)
-            upNode = Node(upPuzzle, "up")
-            nodeCount = nodeCount + 1
-            upNode.setPrev(current)
-            if upNode.getState().equals(goalState):
-                finalNode = upNode
-                break
-            else:
-                reached.append(upPuzzle)
-                frontier.append(upNode)
-                frontierSize = frontierSize+1
-
-        # out of the four states that are possible, checking the one that is left
-        downArray = current.getState().moveResult("down")
-        if not isinstance(downArray, str):
-            # print("down test")
-            downPuzzle = Puzzle(downArray)
-            downNode = Node(downPuzzle, "down")
-            nodeCount = nodeCount + 1
-            downNode.setPrev(current)
-            if downNode.getState().equals(goalState):
-                finalNode = downNode
-                break
-            else:
-                reached.append(downPuzzle)
-                frontier.append(downNode)
-                frontierSize = frontierSize+1
-
         # out of the four states that are possible, checking the one that is left
         leftArray = current.getState().moveResult("left")
         if not isinstance(leftArray, str):
-            # print("left test")
             leftPuzzle = Puzzle(leftArray)
             leftNode = Node(leftPuzzle, "left")
             nodeCount = nodeCount + 1
@@ -440,15 +470,14 @@ def bsfSearchHelper(goalState, startState, maxNode):
             if leftNode.getState().equals(goalState):
                 finalNode = leftNode
                 break
-            else:
-                reached.append(leftPuzzle)
+            elif reached.contains(leftNode) != True:
+                reached.add(leftPuzzle)
                 frontier.append(leftNode)
                 frontierSize = frontierSize+1
 
-        # out of the four states that are possible, checking the one that is left
+        # out of the four states that are possible, checking the one that is right
         rightArray = current.getState().moveResult("right")
         if not isinstance(rightArray, str):
-            # print("right test")
             rightPuzzle = Puzzle(rightArray)
             rightNode = Node(rightPuzzle, "left")
             nodeCount = nodeCount + 1
@@ -456,9 +485,39 @@ def bsfSearchHelper(goalState, startState, maxNode):
             if rightNode.getState().equals(goalState):
                 finalNode = rightNode
                 break
-            else:
-                reached.append(rightPuzzle)
+            elif reached.contains(rightNode) != True:
+                reached.add(rightPuzzle)
                 frontier.append(rightNode)
+                frontierSize = frontierSize+1
+
+        # out of the four states that are possible, checking up
+        upArray = current.getState().moveResult("up")
+        if not isinstance(upArray, str):
+            upPuzzle = Puzzle(upArray)
+            upNode = Node(upPuzzle, "up")
+            nodeCount = nodeCount + 1
+            upNode.setPrev(current)
+            if upNode.getState().equals(goalState):
+                finalNode = upNode
+                break
+            elif reached.contains(upNode) != True:
+                reached.add(upPuzzle)
+                frontier.append(upNode)
+                frontierSize = frontierSize+1
+
+        # out of the four states that are possible, checking the one that is down
+        downArray = current.getState().moveResult("down")
+        if not isinstance(downArray, str):
+            downPuzzle = Puzzle(downArray)
+            downNode = Node(downPuzzle, "down")
+            nodeCount = nodeCount + 1
+            downNode.setPrev(current)
+            if downNode.getState().equals(goalState):
+                finalNode = downNode
+                break
+            elif reached.contains(downNode) != True:
+                reached.add(downPuzzle)
+                frontier.append(downNode)
                 frontierSize = frontierSize+1
 
     return finalNode, nodeCount
@@ -466,6 +525,9 @@ def bsfSearchHelper(goalState, startState, maxNode):
 
 
 goalState = Puzzle([0,1,2,3,4,5,6,7,8])
-givenState = Puzzle([3,1,2,4,0,5,6,7,8])
-givenState.printState()
-bsfSearch(givenState, 1000)
+startState = Puzzle([3,1,0,2,4,5,6,7,8])
+startState.move("down")
+# startState.printState()
+visited = linkedList(Node(startState, "start"))
+# dsfIterative(startState, goalState, 1000)
+print(dsfRecursive(startState, goalState, 1000, "down",visited))
