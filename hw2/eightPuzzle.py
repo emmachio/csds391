@@ -38,7 +38,6 @@ class Puzzle:
                     exit()
                 elif(self.puzzle[i]==0):
                     self.blankTile = i
-            print("puzzle state set")
 
     # printState function where it converts the puzzle into a 3x3 matrix where the empty tile is blank rather than a 0
     def printState(self):
@@ -79,10 +78,9 @@ class Puzzle:
                 print("Error: Invalid move")
                 return "Error: Invalid move"
             else:
-                puzzle[blankTile]= puzzle[blankTile-3]
-                puzzle[blankTile-3]=0
-                print("Blank tile successfully moved up:")
-                self.printState()
+                self.puzzle[self.blankTile]= self.puzzle[self.blankTile-3]
+                self.puzzle[blankTile-3]=0
+                self.blankTile = self.blankTile-3
         # if the tile goes down, then it's index increases by 3 but if it goes above 8, then that means the blank
         # tile is on the last row and cannot be moved down, thus an invalid move, otherwise a switch of values will occur
         # which will act as the tile moving down
@@ -94,8 +92,6 @@ class Puzzle:
                 self.puzzle[self.blankTile]= self.puzzle[self.blankTile+3]
                 self.puzzle[self.blankTile+3]=0
                 self.blankTile = self.blankTile+3
-                print("Blank tile successfully moved down:")
-                self.printState()
         # if the tile goes left, then it's index decreases by 1 but if index modulo 3 is equal to 0, then that means the blank
         # tile is on the left most column and cannot be moved left, thus an invalid move, otherwise a switch of values will occur
         # which will act as the tile moving left
@@ -107,8 +103,6 @@ class Puzzle:
                 self.puzzle[self.blankTile]= self.puzzle[self.blankTile-1]
                 self.puzzle[self.blankTile-1]=0
                 self.blankTile = self.blankTile-1
-                print("Blank tile successfully moved left:")
-                self.printState()
         # if the tile goes right, then it's index increases by 1 but if index modulo 3 is equal to 2, then that means the blank
         # tile is on the right most column and cannot be moved right, thus an invalid move, otherwise a switch of values will occur
         # which will act as the tile moving right
@@ -120,8 +114,6 @@ class Puzzle:
                 self.puzzle[self.blankTile]= self.puzzle[self.blankTile+1]
                 self.puzzle[self.blankTile+1]=0
                 self.blankTile = self.blankTile+1
-                print("Blank tile successfully moved right:")
-                self.printState()
         else:
             print("Error: Invalid command: move " + direction)
 
@@ -234,11 +226,16 @@ class Puzzle:
         # if there is a space in the command, then it will split it as the command and its input
         if " " in commandString:
             command, inputs = commandString.split(" ", 1)
-        # otherwise, it is just a command
+        # otherwise, it is just a command and there is no input
         else:
             command = commandString
             inputs = ""
-        if command.substring(2) == "//" and command.charAt(0) == "#":
+        # determining if the line in the input file is a comment or a command
+        if command[0:2] == "//" or command[0:1] == "#":
+            print(inputs)
+        else:
+            # printing the command before doing it
+            print("\nCOMMAND:", command, inputs)
             # if the command is setState, calling the function setState with the desired input
             if command == "setState":
                 self.setState(inputs)
@@ -252,8 +249,14 @@ class Puzzle:
             # putting a space before so in the instance of two printState's they will not merge
             elif command == "printState":
                 self.printState()
-            # elif command == "search":
-            #     self.search(input)
+            elif command == "solve":
+                if "maxnodes" in inputs:
+                    type = inputs[0:3]
+                    parts = inputs.split("=")
+                    maxNode = parts[1].strip()
+                    self.solve(type, int(maxNode))
+                else:
+                    self.solve(inputs)
             # if the command is none of the above, error message is given with the invalid command
             else:
                 print("Error: invalid command: " + commandString)
@@ -270,73 +273,87 @@ class Puzzle:
         except FileNotFoundError:
             print("Error: file name " + filename + " not found")
 
+    # returns the state of the puzzle as the state representation
     def getState(self):
         return self.puzzle
 
+    # checks if two Puzzles are equal
     def equals(self, providedPuzzle):
         return self.puzzle == providedPuzzle.getState()
 
+    # dsf recursion function
     def dsfRecursive(self, startState, goalState, limit, direction, visited, prevNode):
         current = Node(startState, direction)
         current.setPrev(prevNode)
-        # print("direction",limit,direction)
+        # if the state that was found is the desired end state, then return the state
         if goalState.equals(startState):
             return current, limit
+        # if the maximum number of nodes have been created, then exit and return error
         elif limit == 0:
-            return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
+            return "Error: maxnodes limit", limit
+        # current is the Node of the current state we are in and direction is waht the prior state
+        # had to move in order to get to current
+        # set that the state prior to current was the state
         current = Node(startState, direction)
         current.setPrev(prevNode)
-        # current is the Node of the current state we are in
-        if visited.contains(current):
-            return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
-        else:
-            visited.add(current)
-            if direction != "right":
-                # print("move  left")
-                leftArray = current.getState().moveResult("left")
-                # print(leftArray)
-                if not isinstance(leftArray, str):
-                    leftPuzzle = Puzzle(leftArray)
-                    result = self.dsfRecursive(leftPuzzle, goalState, limit-1, "left", visited, current)
-                    if not isinstance(result, str):
-                        return result
+    # if visited.contains(current):
+    #     return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed"), limit
+    # else:
+    # add that now current has been visited
+    # visited.add(current)
+    # making sure that if the state being checked is from moving the blank tile right,
+    # we do not go back to the prior state by moving the blank tile left - will cause infinite loop
+    # if direction != "right":
+        # checking that the direction of the move is possible
+        leftArray = current.getState().moveResult("left")
+        if not isinstance(leftArray, str):
+            leftPuzzle = Puzzle(leftArray)
+            result = self.dsfRecursive(leftPuzzle, goalState, limit-1, "left", visited, current)
+            if not isinstance(result, str):
+                return result
 
-            if direction != "left":
-                # print("move right")
-                rightArray = current.getState().moveResult("right")
-                # print(rightArray)
-                if not isinstance(rightArray, str):
-                    rightPuzzle = Puzzle(rightArray)
-                    result = self.dsfRecursive(rightPuzzle, goalState, limit-1, "right", visited, current)
-                    if not isinstance(result, str):
-                        return result
+    # making sure that if the state being checked is from moving the blank tile left,
+    # we do not go back to the prior state by moving the blank tile right - will cause infinite loop
+    # if direction != "left":
+    # checking that the direction of the move is possible
+        rightArray = current.getState().moveResult("right")
+        if not isinstance(rightArray, str):
+            rightPuzzle = Puzzle(rightArray)
+            result = self.dsfRecursive(rightPuzzle, goalState, limit-1, "right", visited, current)
+            if not isinstance(result, str):
+                return result
 
-            if direction != "down":
-                # print("move up")
-                upArray = current.getState().moveResult("up")
-                # print(upArray)
-                if not isinstance(upArray, str):
-                    upPuzzle = Puzzle(upArray)
-                    result = self.dsfRecursive(upPuzzle, goalState, limit-1, "up", visited, current)
-                    if not isinstance(result, str):
-                        return result
+    # making sure that if the state being checked is from moving the blank tile down,
+    # we do not go back to the prior state by moving the blank tile up - will cause infinite loop
+    # if direction != "down":
+        # checking that the direction of the move is possible
+        upArray = current.getState().moveResult("up")
+        if not isinstance(upArray, str):
+            upPuzzle = Puzzle(upArray)
+            result = self.dsfRecursive(upPuzzle, goalState, limit-1, "up", visited, current)
+            if not isinstance(result, str):
+                return result
 
-            if direction != "up":
-                # print("move down")
-                downArray = current.getState().moveResult("down")
-                # print(downArray)
-                if not isinstance(downArray, str):
-                    downPuzzle = Puzzle(downArray)
-                    result = self.dsfRecursive(downPuzzle, goalState, limit-1, "down", visited, current)
-                    if not isinstance(result, str):
-                        return result
+    # making sure that if the state being checked is from moving the blank tile up,
+    # we do not go back to the prior state by moving the blank tile down - will cause infinite loop
+    # if direction != "up":
+        # checking that the direction of the move is possible
+        downArray = current.getState().moveResult("down")
+        if not isinstance(downArray, str):
+            downPuzzle = Puzzle(downArray)
+            result = self.dsfRecursive(downPuzzle, goalState, limit-1, "down", visited, current)
+            if not isinstance(result, str):
+                return result
         return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
 
 
+    # bsf function
     def bsfSearchHelper(self, goalState, startState, maxNode):
-        initialNode = Node(startState, -1)
+        # a node of the initial state is made and marked as the initial state
+        initialNode = Node(startState, "initial")
         finalNode = Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
         nodeCount = 1
+        # checks if the state that we were given is equal to the desired goal state
         if goalState.equals(startState):
             return initialNode, nodeCount
         else:
@@ -352,7 +369,6 @@ class Puzzle:
             # current is the Node that was popped out of the queue
             current = frontier.popleft()
             frontierSize = frontierSize-1
-            # print(current.getState().printState())
 
             # out of the four states that are possible, checking the one that is left
             leftArray = current.getState().moveResult("left")
@@ -362,9 +378,9 @@ class Puzzle:
                 nodeCount = nodeCount + 1
                 leftNode.setPrev(current)
                 if leftNode.getState().equals(goalState):
-                    return leftNode
-                elif reached.contains(leftNode) != True:
-                    reached.add(leftNode)
+                    return leftNode, nodeCount
+                # elif reached.contains(leftNode) != True:
+                #     reached.add(leftNode)
                     frontier.append(leftNode)
                     frontierSize = frontierSize+1
 
@@ -376,9 +392,9 @@ class Puzzle:
                 nodeCount = nodeCount + 1
                 rightNode.setPrev(current)
                 if rightNode.getState().equals(goalState):
-                    return rightNode
-                elif reached.contains(rightNode) != True:
-                    reached.add(rightNode)
+                    return rightNode, nodeCount
+                # elif reached.contains(rightNode) != True:
+                #     reached.add(rightNode)
                     frontier.append(rightNode)
                     frontierSize = frontierSize+1
 
@@ -390,9 +406,9 @@ class Puzzle:
                 nodeCount = nodeCount + 1
                 upNode.setPrev(current)
                 if upNode.getState().equals(goalState):
-                    return upNode
-                elif reached.contains(upNode) != True:
-                    reached.add(upNode)
+                    return upNode, nodeCount
+                # elif reached.contains(upNode) != True:
+                #     reached.add(upNode)
                     frontier.append(upNode)
                     frontierSize = frontierSize+1
 
@@ -404,16 +420,17 @@ class Puzzle:
                 nodeCount = nodeCount + 1
                 downNode.setPrev(current)
                 if downNode.getState().equals(goalState):
-                    return downNode
-                elif reached.contains(downNode) != True:
-                    reached.add(downNode)
+                    return downNode, nodeCount
+                # elif reached.contains(downNode) != True:
+                #     reached.add(downNode)
                     frontier.append(downNode)
                     frontierSize = frontierSize+1
         if nodeCount >= maxNode:
-            print("Error: maxnodes limit ", maxNode, "reached")
+            return "Error: maxnodes limit", maxNode
         return finalNode, nodeCount
 
-    def search(self, type, maxNode = 1000):
+# solve function that incorporates both bsf and dsf, depending on the input
+    def solve(self, type, maxNode = 1000):
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         result = Node(Puzzle([0,0,0, 0,0,0, 0,0,0]), "failed")
         nodeCount = 0
@@ -421,32 +438,32 @@ class Puzzle:
         if type == "bsf":
             result, nodeCount = self.bsfSearchHelper(goalState, self, maxNode)
         elif type == "dsf":
+            # making a node for the given puzzle
             selfNode = Node(self, None)
+            # creating an empty linked list for the nodes that have been visited
             visited = linkedList(selfNode)
             result, nodeCount = self.dsfRecursive(self, goalState, maxNode, None, visited, None)
             nodeCount = maxNode - nodeCount
-        while result.hasPrev():
-            move = result.getMove()
-            resultStack.append(move)
-            result = result.getPrev()
-        print("Nodes created during search:", nodeCount)
-        print("Solution length:", len(resultStack))
-        print("Move sequence:")
-        while len(resultStack) > 0:
-            moveDone = resultStack.pop()
-            print("move", moveDone)
+        # checks if it is an error due to the maximum number of nodes being reached
+        if result=="Error: maxnodes limit":
+            print("Error: maxnodes limit", maxNode, "reached")
+        # given the last node, go through the prior states that brough it here until the initial state is reached
+        # print the moves onto terminal backwards
+        else:
+            while result.hasPrev():
+                move = result.getMove()
+                resultStack.append(move)
+                result = result.getPrev()
+            # nodeCount is the number of nodes that were created
+            print("Nodes created during search:", nodeCount)
+            # resultStack is the stack of the solution states and therefore the solution length
+            print("Solution length:", len(resultStack))
+            print("Move sequence:")
+            while len(resultStack) > 0:
+                moveDone = resultStack.pop()
+                print("move", moveDone)
 
 
-# main function that takes it so that the file name can be given in the terminal
-# checks to make sure that there are two arguments in the terminal before calling on the second
-# input of the terminal which is the command file
-def main():
-    if len(sys.argv) > 1:
-        commandFile = sys.argv[1]
-        Puzzle.cmdfile(commandFile)
-
-if __name__ == "__main__":
-    main()
 
 class Node:
 
@@ -492,23 +509,26 @@ class Node:
     def hasNext(self):
         return self.nextNode != None
 
+    # function that returns whether or not the Node has next
     def hasPrev(self):
         return self.previousNode != None
 
 class linkedList:
 
+    # initializing it with the first node
     def __init__(self, firstNode):
         self.first = firstNode
         self.first.setMove(-1)
         self.size = 1
 
+    # adding into the linked list with the first node
     def add(self, addedNode):
         current = self.first
         while (current.hasNext()):
             current = current.getNext()
         current.setNext(addedNode)
         self.size = self.size + 1
-
+    # checks if a specific node is within the linked list
     def contains(self, givenNode):
         current = self.first
         while (current.hasNext()):
@@ -517,13 +537,15 @@ class linkedList:
                 return True
         return False
 
-goalState = Puzzle([0,1,2,3,4,5,6,7,8])
-startState = Puzzle([0,1,2,3,4,5,6,7,8])
-startState.move("right")
-startState.move("right")
-startState.move("down")
-# startState.printState()
-visited = linkedList(Node(startState, "start"))
-startState.search("dsf")
-# dsfIterative(startState, goalState, 1000)
-# startState.search("bsf")
+# main function that takes it so that the file name can be given in the terminal
+# checks to make sure that there are two arguments in the terminal before calling on the second
+# input of the terminal which is the command file
+def main():
+    if len(sys.argv) > 1:
+        commandFile = sys.argv[1]
+        testing = Puzzle([0,0,0,0,0,0,0,0,0])
+        testing.cmdfile(commandFile)
+
+if __name__ == "__main__":
+    main()
+
