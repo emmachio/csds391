@@ -1,15 +1,13 @@
 import random
 import sys
 from collections import deque
+import heapq
 
 class Puzzle:
     # global functions that keep track of the puzzle and the location of the blank tile
 
-    def __init__(self, givenArray=None):
-        if givenArray is None:
-            self.puzzle = []
-        else:
-            self.puzzle = givenArray.copy()
+    def __init__(self, givenArray=[0,0,0,0,0,0,0,0,0]):
+        self.puzzle = givenArray.copy()
         for i in range(9):
             if self.puzzle[i] == 0:
                 self.blankTile = i
@@ -18,8 +16,6 @@ class Puzzle:
     # setState command where it will set the puzzle into the desired state but inputting it into the
     # global variable puzzle
     def setState(self, puzzleState):
-        self.puzzle
-        self.blankTile
         # splitting the string of puzzleState by space so that each element within the string is its own value so it can be
         # inputting into the list
         elementsSplit = puzzleState.split()
@@ -296,54 +292,55 @@ class Puzzle:
         # set that the state prior to current was the state
         current = Node(startState, direction)
         current.setPrev(prevNode)
-    # if visited.contains(current):
-    #     return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed"), limit
-    # else:
-    # add that now current has been visited
-    # visited.add(current)
-    # making sure that if the state being checked is from moving the blank tile right,
-    # we do not go back to the prior state by moving the blank tile left - will cause infinite loop
-    # if direction != "right":
-        # checking that the direction of the move is possible
-        leftArray = current.getState().moveResult("left")
-        if not isinstance(leftArray, str):
-            leftPuzzle = Puzzle(leftArray)
-            result = self.dsfRecursive(leftPuzzle, goalState, limit-1, "left", visited, current)
-            if not isinstance(result, str):
-                return result
+        # if visited.contains(current):
+        if current in visited:
+            return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed"), limit
+        else:
+            # add that now current has been visited
+            visited.append(current)
+            # making sure that if the state being checked is from moving the blank tile right,
+            # we do not go back to the prior state by moving the blank tile left - will cause infinite loop
+            if direction != "right":
+                # checking that the direction of the move is possible
+                leftArray = current.getState().moveResult("left")
+                if not isinstance(leftArray, str):
+                    leftPuzzle = Puzzle(leftArray)
+                    result = self.dsfRecursive(leftPuzzle, goalState, limit-1, "left", visited, current)
+                    if not isinstance(result, str):
+                        return result
 
-    # making sure that if the state being checked is from moving the blank tile left,
-    # we do not go back to the prior state by moving the blank tile right - will cause infinite loop
-    # if direction != "left":
-    # checking that the direction of the move is possible
-        rightArray = current.getState().moveResult("right")
-        if not isinstance(rightArray, str):
-            rightPuzzle = Puzzle(rightArray)
-            result = self.dsfRecursive(rightPuzzle, goalState, limit-1, "right", visited, current)
-            if not isinstance(result, str):
-                return result
-
-    # making sure that if the state being checked is from moving the blank tile down,
-    # we do not go back to the prior state by moving the blank tile up - will cause infinite loop
-    # if direction != "down":
+        # making sure that if the state being checked is from moving the blank tile left,
+        # we do not go back to the prior state by moving the blank tile right - will cause infinite loop
+        if direction != "left":
         # checking that the direction of the move is possible
-        upArray = current.getState().moveResult("up")
-        if not isinstance(upArray, str):
-            upPuzzle = Puzzle(upArray)
-            result = self.dsfRecursive(upPuzzle, goalState, limit-1, "up", visited, current)
-            if not isinstance(result, str):
-                return result
+            rightArray = current.getState().moveResult("right")
+            if not isinstance(rightArray, str):
+                rightPuzzle = Puzzle(rightArray)
+                result = self.dsfRecursive(rightPuzzle, goalState, limit-1, "right", visited, current)
+                if not isinstance(result, str):
+                    return result
 
-    # making sure that if the state being checked is from moving the blank tile up,
-    # we do not go back to the prior state by moving the blank tile down - will cause infinite loop
-    # if direction != "up":
-        # checking that the direction of the move is possible
-        downArray = current.getState().moveResult("down")
-        if not isinstance(downArray, str):
-            downPuzzle = Puzzle(downArray)
-            result = self.dsfRecursive(downPuzzle, goalState, limit-1, "down", visited, current)
-            if not isinstance(result, str):
-                return result
+        # making sure that if the state being checked is from moving the blank tile down,
+        # we do not go back to the prior state by moving the blank tile up - will cause infinite loop
+        if direction != "down":
+            # checking that the direction of the move is possible
+            upArray = current.getState().moveResult("up")
+            if not isinstance(upArray, str):
+                upPuzzle = Puzzle(upArray)
+                result = self.dsfRecursive(upPuzzle, goalState, limit-1, "up", visited, current)
+                if not isinstance(result, str):
+                    return result
+
+        # making sure that if the state being checked is from moving the blank tile up,
+        # we do not go back to the prior state by moving the blank tile down - will cause infinite loop
+        if direction != "up":
+            # checking that the direction of the move is possible
+            downArray = current.getState().moveResult("down")
+            if not isinstance(downArray, str):
+                downPuzzle = Puzzle(downArray)
+                result = self.dsfRecursive(downPuzzle, goalState, limit-1, "down", visited, current)
+                if not isinstance(result, str):
+                    return result
         return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
 
 
@@ -358,10 +355,11 @@ class Puzzle:
             return initialNode, nodeCount
         else:
             # frontier is a queue of Nodes
-            frontier = deque([])
+            frontier = deque()
             frontierSize = 0
             # reached is a linked list of Nodes
-            reached = linkedList(Node(Puzzle([0,0,0,0,0,0,0,0,0]), "testing"))
+            reached = deque()
+            # reached = linkedList(Node(Puzzle([0,0,0,0,0,0,0,0,0]), "testing"))
             # add the initialNode into the frontier and reached array
             frontier.append(initialNode)
             frontierSize = frontierSize+1
@@ -379,8 +377,8 @@ class Puzzle:
                 leftNode.setPrev(current)
                 if leftNode.getState().equals(goalState):
                     return leftNode, nodeCount
-                # elif reached.contains(leftNode) != True:
-                #     reached.add(leftNode)
+                elif not (leftNode in reached):
+                    reached.append(leftNode)
                     frontier.append(leftNode)
                     frontierSize = frontierSize+1
 
@@ -393,8 +391,8 @@ class Puzzle:
                 rightNode.setPrev(current)
                 if rightNode.getState().equals(goalState):
                     return rightNode, nodeCount
-                # elif reached.contains(rightNode) != True:
-                #     reached.add(rightNode)
+                elif not (rightNode in reached):
+                    reached.append(rightNode)
                     frontier.append(rightNode)
                     frontierSize = frontierSize+1
 
@@ -407,8 +405,8 @@ class Puzzle:
                 upNode.setPrev(current)
                 if upNode.getState().equals(goalState):
                     return upNode, nodeCount
-                # elif reached.contains(upNode) != True:
-                #     reached.add(upNode)
+                elif not (upNode in reached):
+                    reached.append(upNode)
                     frontier.append(upNode)
                     frontierSize = frontierSize+1
 
@@ -421,8 +419,8 @@ class Puzzle:
                 downNode.setPrev(current)
                 if downNode.getState().equals(goalState):
                     return downNode, nodeCount
-                # elif reached.contains(downNode) != True:
-                #     reached.add(downNode)
+                elif not (downNode in reached):
+                    reached.append(downNode)
                     frontier.append(downNode)
                     frontierSize = frontierSize+1
         if nodeCount >= maxNode:
@@ -430,7 +428,7 @@ class Puzzle:
         return finalNode, nodeCount
 
 # solve function that incorporates both bsf and dsf, depending on the input
-    def solve(self, type, maxNode = 900):
+    def solve(self, type, maxNode = 1000):
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         result = Node(Puzzle([0,0,0, 0,0,0, 0,0,0]), "failed")
         nodeCount = 0
@@ -441,7 +439,8 @@ class Puzzle:
             # making a node for the given puzzle
             selfNode = Node(self, None)
             # creating an empty linked list for the nodes that have been visited
-            visited = linkedList(selfNode)
+            visited = deque()
+            # visited = linkedList(selfNode)
             result, nodeCount = self.dsfRecursive(self, goalState, maxNode, None, visited, None)
             nodeCount = maxNode - nodeCount
         # checks if it is an error due to the maximum number of nodes being reached
@@ -463,12 +462,151 @@ class Puzzle:
                 moveDone = resultStack.pop()
                 print("move", moveDone)
 
+    def heuristic(self, htype):
+        if htype == "h1":
+            displacedTiles = 0
+            for i in range(9):
+                if self.puzzle[i] != i and self.puzzle[i] != 0:
+                    displacedTiles += 1
+            return displacedTiles
+        elif htype == "h2":
+            totalMoves = 0
+            for i in range(9):
+                if self.puzzle[i] != 0:
+                    upDown = abs(int(self.puzzle[i]/3) - int(i/3))
+                    leftRight = abs((self.puzzle[i]%3) - (i%3))
+                    totalMoves += upDown
+                    totalMoves += leftRight
+            return totalMoves
+
+    def Asearch(self, heuristicType, maxNodes=1000):
+        # keeping track of the amount of nodes made
+        nodeCount = 0
+        counter = 0
+        # using the heuristic to keep track of cost
+        cost = self.heuristic(heuristicType)
+        # making a priority queue for the possible states
+        possibleStates = []
+        # making a queue to keep track of all the visited nodes
+        visited = deque()
+        # adding the first state into the possibleStates queue
+        counter+=1
+        possibleStates.append((0,-1,Node(self)))
+        # adding one to the amount of nodes creates
+        nodeCount =+ 1
+        goalState = Puzzle([0,1,2,3,4,5,6,7,8])
+        while len(possibleStates) != 0:
+            current = heapq.heappop(possibleStates)
+            currentCost = current[0]
+            currentNode = current[2]
+            print(currentNode.getState().printState())
+            if currentNode.getState().equals(goalState):
+                return currentNode
+            # adding state of moving left
+            leftArray = currentNode.getState().moveResult("left")
+            if not isinstance(leftArray, str):
+                leftPuzzle = Puzzle(leftArray)
+                cost = leftPuzzle.heuristic(heuristicType)
+                leftNode = Node(leftPuzzle)
+                leftNode.setPrev(currentNode)
+                counter+=1
+                index=-1
+                i = -1
+                for item in possibleStates:
+                    i+=1
+                    if item[2].getState().equals(leftPuzzle):
+                        index = i
+                print(index)
+                print("left puzzle:", leftPuzzle.getState(), currentCost)
+                if index != -1:
+                    if possibleStates[index][0] > cost+currentCost:
+                        possibleStates[index][0] = cost+currentCost
+                        possibleStates[index][2] = leftNode
+                else:
+                    possibleStates.append((cost+1, 1, leftNode))
+                heapq.heapify(possibleStates)
+            # adding state of moving right
+            rightArray = currentNode.getState().moveResult("right")
+            # print("right array:",rightArray)
+            if not isinstance(rightArray, str):
+                rightPuzzle = Puzzle(rightArray)
+                cost = rightPuzzle.heuristic(heuristicType)
+                rightNode = Node(rightPuzzle)
+                rightNode.setPrev(currentNode)
+                counter+=1
+                index = -1
+                i = -1
+                for item in possibleStates:
+                    i+=1
+                    if item[2].getState().equals(rightPuzzle):
+                        index = i
+                # print(index)
+                # print("right puzzle:", rightPuzzle.getState(), currentCost)
+                if index != -1:
+                    if possibleStates[index][0] > cost+currentCost:
+                        possibleStates[index][0] = cost+currentCost
+                        possibleStates[index][2] = rightNode
+                else:
+                    possibleStates.append((cost+1, 2, rightNode))
+                for item in possibleStates:
+                    print(item[0])
+                    print(item[1])
+                    print(item[2].getState().getState())
+                heapq.heapify(possibleStates)
+            # adding state of moving up
+            # print("up")
+            upArray = currentNode.getState().moveResult("up")
+            if not isinstance(upArray, str):
+                upPuzzle = Puzzle(upArray)
+                cost = upPuzzle.heuristic(heuristicType)
+                upNode = Node(upPuzzle)
+                upNode.setPrev(currentNode)
+                counter+=1
+                index = -1
+                i = -1
+                for item in possibleStates:
+                    i+=1
+                    if item[2].getState().equals(upPuzzle):
+                        index = i
+                # print(index)
+                # print("up puzzle:", upPuzzle.getState(), currentCost)
+                if index != -1:
+                    if possibleStates[index][0] > cost+currentCost:
+                        possibleStates[index][0] = cost+currentCost
+                        possibleStates[index][2] = upNode
+                else:
+                    possibleStates.append((cost+1, 3, upNode))
+                heapq.heapify(possibleStates)
+            # adding state of moving down
+            downArray = currentNode.getState().moveResult("down")
+            if not isinstance(downArray, str):
+                downPuzzle = Puzzle(downArray)
+                # upPuzzle.printState()
+                cost = downPuzzle.heuristic(heuristicType)
+                downNode = Node(downPuzzle)
+                downNode.setPrev(currentNode)
+                counter+=1
+                index = -1
+                i = -1
+                for item in possibleStates:
+                    i+=1
+                    if item[2].getState().equals(downPuzzle):
+                        index = i
+                print(index)
+                print("right puzzle:", downPuzzle.getState(), currentCost)
+                if index != -1:
+                    if possibleStates[index][0] > cost+currentCost:
+                        possibleStates[index][0] = cost+currentCost
+                        possibleStates[index][2] = downNode
+                else:
+                    possibleStates.append((cost+1, 4, downNode))
+                heapq.heapify(possibleStates)
 
 
 class Node:
 
     # constructor that sets the currentState to the provided Node and everything else as none
-    def __init__(self, givenState, move):
+    def __init__(self, givenState, move="none"):
         self.currentState = givenState
         self.nextNode = None
         self.previousNode = None
@@ -490,6 +628,9 @@ class Node:
     def setMove(self, move):
         self.moveDone = move
 
+    def setCost(self, cost):
+        self.cost = cost
+
     # function that returns the state
     def getState(self):
         return  self.currentState
@@ -505,6 +646,9 @@ class Node:
     def getMove(self):
         return self.moveDone
 
+    def getCost(self):
+        return self.cost
+
     # function that returns whether or not the Node has next
     def hasNext(self):
         return self.nextNode != None
@@ -512,6 +656,9 @@ class Node:
     # function that returns whether or not the Node has next
     def hasPrev(self):
         return self.previousNode != None
+
+    def equals(self, otherNode):
+        return self.getState().equals(otherNode.getState())
 
 class linkedList:
 
@@ -549,3 +696,26 @@ def main():
 if __name__ == "__main__":
     main()
 
+# testing1 = Puzzle([0,1,2,3,4,5,6,7,8])
+# testing1.move("down")
+# testing1.move("down")
+# testing1.move("right")
+# testing1.printState()
+# # testing1.scrambleState(20)
+# testing1.solve("dsf")
+# testing2 = Puzzle([4,3,2,1,0,5,6,7,8])
+# testing2.move("left")
+# testing2.move("up")
+# testing2.move("left")
+# testing2.move("down")
+# testing2.move("left")
+# testing2.move("up")
+# testing2.printState()
+
+# testing1.printState()
+# print(testing1.Asearch("h2").getState().getState())
+# testing2 = Puzzle([3,1,2,6,4,5,7,0,8])
+# testing2.heuristic("h2")
+#
+# testing3 = Puzzle([3,1,2,6,4,5,7,0,8])
+# testing2.heuristic("h2")

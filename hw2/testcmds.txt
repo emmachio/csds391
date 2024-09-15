@@ -1,0 +1,18 @@
+# setting the state to an arbitrary state - since it has #, this should not show up
+setState 1 2 5 3 4 0 6 7 8
+printState
+# solving the problem with bsf, with the default number of maximum nodes (900)
+solve bsf
+setState 1 2 5 3 4 0 6 7 8
+printState
+# solving the problem with bsf, with a given number of maximum nodes
+solve bsf maxnodes=10
+# setting the state to an arbitrary state 
+setState 1 2 5 3 4 0 6 7 8
+printState
+# solving the problem with bsf, with the default number of maximum nodes (900)
+solve dsf
+setState 1 2 5 3 4 0 6 7 8
+printState
+# solving the problem with bsf, with a given number of maximum nodes
+solve dsf maxnodes=10

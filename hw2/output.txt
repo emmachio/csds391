@@ -1,0 +1,58 @@
+setting the state to an arbitrary state - since it has #, this should not show up
+
+COMMAND: setState 1 2 5 3 4 0 6 7 8
+
+COMMAND: printState 
+Current state of board:
+[1, 2, 5]
+[3, 4, ' ']
+[6, 7, 8]
+
+solving the problem with bsf, with the default number of maximum nodes (900)
+
+COMMAND: solve bsf
+Nodes created during search: 4
+Solution length: 0
+Move sequence:
+
+COMMAND: setState 1 2 5 3 4 0 6 7 8
+
+COMMAND: printState 
+Current state of board:
+[1, 2, 5]
+[3, 4, ' ']
+[6, 7, 8]
+
+solving the problem with bsf, with a given number of maximum nodes
+
+COMMAND: solve bsf maxnodes=10
+Nodes created during search: 4
+Solution length: 0
+Move sequence:
+setting the state to an arbitrary state
+
+COMMAND: setState 1 2 5 3 4 0 6 7 8
+
+COMMAND: printState 
+Current state of board:
+[1, 2, 5]
+[3, 4, ' ']
+[6, 7, 8]
+
+solving the problem with bsf, with the default number of maximum nodes (900)
+
+COMMAND: solve dsf
+Error: maxnodes limit 900 reached
+
+COMMAND: setState 1 2 5 3 4 0 6 7 8
+
+COMMAND: printState 
+Current state of board:
+[1, 2, 5]
+[3, 4, ' ']
+[6, 7, 8]
+
+solving the problem with bsf, with a given number of maximum nodes
+
+COMMAND: solve dsf maxnodes=10
+Error: maxnodes limit 10 reached
