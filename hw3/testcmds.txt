@@ -1,0 +1,11 @@
+# arbitrarily scrambling a puzzle - setting
+scrambleState 20
+# A STAR SEARCH TESTING
+# testing solving the problem using heuristic 1
+solve A* h1
+# testing solving the problem using heuristic 2
+solve A* h2
+# attempting to call A* when no heuristic given
+solve A*
+# testing maxNodes error
+solve A* h1 maxnodes=10
