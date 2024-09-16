@@ -246,13 +246,16 @@ class Puzzle:
             elif command == "printState":
                 self.printState()
             elif command == "solve":
+                heuristicType = ""
+                maxNodes = 1000
+                if "h" in inputs:
+                    heuristicIndex = inputs.find("h")
+                    heuristicType = inputs[heuristicIndex:heuristicIndex+2]
                 if "maxnodes" in inputs:
-                    type = inputs[0:3]
-                    parts = inputs.split("=")
-                    maxNode = parts[1].strip()
-                    self.solve(type, int(maxNode))
-                else:
-                    self.solve(inputs)
+                    maxNodesIndex = inputs.find("maxnodes")
+                    maxNodes = inputs[maxNodesIndex+9:]
+                type = inputs.split(" ", 1)[0]
+                self.solve(type, heuristicType, int(maxNodes))
             # if the command is none of the above, error message is given with the invalid command
             else:
                 print("Error: invalid command: " + commandString)
@@ -371,12 +374,16 @@ class Puzzle:
             # out of the four states that are possible, checking the one that is left
             leftArray = current.getState().moveResult("left")
             if not isinstance(leftArray, str):
+                # creating the Puzzle and Node for the state if the blank is moved left
                 leftPuzzle = Puzzle(leftArray)
                 leftNode = Node(leftPuzzle, "left")
+                # incrementing the number of nodes created
                 nodeCount = nodeCount + 1
                 leftNode.setPrev(current)
+                # if this state is the goalState, then return the node
                 if leftNode.getState().equals(goalState):
                     return leftNode, nodeCount
+                # if the state has not been reached before, then add it to reached and frontier
                 elif not (leftNode in reached):
                     reached.append(leftNode)
                     frontier.append(leftNode)
@@ -428,26 +435,29 @@ class Puzzle:
         return finalNode, nodeCount
 
 # solve function that incorporates both bsf and dsf, depending on the input
-    def solve(self, type, maxNode = 1000):
+    def solve(self, type, heuristic = None ,maxNode = 1000):
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         result = Node(Puzzle([0,0,0, 0,0,0, 0,0,0]), "failed")
         nodeCount = 0
         resultStack = deque()
-        if type == "bsf":
+        if type == "BSF":
             result, nodeCount = self.bsfSearchHelper(goalState, self, maxNode)
-        elif type == "dsf":
-            # making a node for the given puzzle
-            selfNode = Node(self, None)
+        elif type == "DSF":
             # creating an empty linked list for the nodes that have been visited
             visited = deque()
             # visited = linkedList(selfNode)
             result, nodeCount = self.dsfRecursive(self, goalState, maxNode, None, visited, None)
             nodeCount = maxNode - nodeCount
         elif type == "A*":
-            result, steps, nodeCount = self.Asearch("h2", maxNode)
+            if heuristic == None or heuristic == "":
+                result = "heuristic not provided for A* search"
+            else:
+                result, steps, nodeCount = self.Asearch(heuristic, maxNode)
         # checks if it is an error due to the maximum number of nodes being reached
-        if result=="Error: maxnodes limit":
+        if result == "Error: maxnodes limit":
             print("Error: maxnodes limit", maxNode, "reached")
+        elif result == "heuristic not provided for A* search":
+            print("Error: Heuristic required for A* search and not provided")
         # given the last node, go through the prior states that brough it here until the initial state is reached
         # print the moves onto terminal backwards
         else:
@@ -455,7 +465,7 @@ class Puzzle:
                 move = result.getMove()
                 resultStack.append(move)
                 result = result.getPrev()
-            # nodeCount is the number of nodes that were created
+            # nodeCount is the number of nodes that were created during the solution
             print("Nodes created during search:", nodeCount)
             # resultStack is the stack of the solution states and therefore the solution length
             print("Solution length:", len(resultStack))
@@ -463,28 +473,36 @@ class Puzzle:
             while len(resultStack) > 0:
                 moveDone = resultStack.pop()
                 print("move", moveDone)
+        print()
 
+    # heuristic function that gives estimate of how far a state is from goal state by designated algorithms
     def heuristic(self, htype):
+        # heuristic function that gives estimate based off of how many tiles are displaced excluding the blank
         if htype == "h1":
             displacedTiles = 0
             for i in range(9):
                 if self.puzzle[i] != i and self.puzzle[i] != 0:
                     displacedTiles += 1
             return displacedTiles
+        # heuristic function that gives estimate based off of sum of how many moves a tile is away from its
+        # target spot of every tile except the blank
         elif htype == "h2":
             totalMoves = 0
             for i in range(9):
                 if self.puzzle[i] != 0:
+                    # upDown determines the number of vertical moves required
                     upDown = abs(int(self.puzzle[i]/3) - int(i/3))
+                    # leftRight determines the number of horizontal moves required
                     leftRight = abs((self.puzzle[i]%3) - (i%3))
                     totalMoves += upDown
                     totalMoves += leftRight
             return totalMoves
+        else:
+            return 0
 
     def Asearch(self, heuristicType, maxNodes=1000):
         # keeping track of the amount of nodes made
         nodeCount = 0
-
         # using the heuristic to keep track of cost
         heuristic = self.heuristic(heuristicType)
         # making a priority queue for the possible states
@@ -497,7 +515,9 @@ class Puzzle:
         nodeCount =+ 1
         # creating the first node based off of the first state and adding it to the possibleStates queue
         firstNode = Node(self)
+        # priority queue keeps track of: f(n), direction, nodeCount, number of steps, added node
         possibleStates.append((heuristic,-1,nodeCount,steps,firstNode))
+        # a goal state puzzle made so that we can determine when we reach the goal state
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         # while there are still possible states to check through
         while len(possibleStates) != 0 and nodeCount <= maxNodes:
@@ -518,6 +538,7 @@ class Puzzle:
                 # determining the heuristic of the state
                 heuristic = leftPuzzle.heuristic(heuristicType)
                 nodeCount = nodeCount+1
+                # creating the node based off the state of moving the blank tile left
                 leftNode = Node(leftPuzzle, "left")
                 leftNode.setPrev(currentNode)
                 index=-1
@@ -543,6 +564,7 @@ class Puzzle:
                 # determining the heuristic of the state
                 heuristic = rightPuzzle.heuristic(heuristicType)
                 nodeCount = nodeCount+1
+                # creating the node based off the state of moving the blank tile right
                 rightNode = Node(rightPuzzle, "right")
                 rightNode.setPrev(currentNode)
                 index = -1
@@ -567,6 +589,7 @@ class Puzzle:
                 upPuzzle = Puzzle(upArray)
                 heuristic = upPuzzle.heuristic(heuristicType)
                 nodeCount = nodeCount+1
+                # creating the node based off the state of moving the blank tile up
                 upNode = Node(upPuzzle, "up")
                 upNode.setPrev(currentNode)
                 index = -1
@@ -590,6 +613,7 @@ class Puzzle:
             if (not isinstance(downArray, str)) and (downArray not in visited):
                 downPuzzle = Puzzle(downArray)
                 heuristic = downPuzzle.heuristic(heuristicType)
+                # creating the node based off the state of moving the blank tile down
                 nodeCount = nodeCount+1
                 downNode = Node(downPuzzle, "down")
                 downNode.setPrev(currentNode)
@@ -707,31 +731,12 @@ if __name__ == "__main__":
     main()
 
 # testing1 = Puzzle([3, 1, 2, 6, 0, 5, 7, 4, 8])
-# testing1.printState()
-testing1 = Puzzle()
-testing1.scrambleState(200)
-# print(testing1.move("left"))
-testing1.printState()
-# print(testing1.move("down"))
-# testing1.printState()
-# testing1.move("down")
-# testing1.move("right")
-# testing1.printState()
-# testing1.solve("dsf")
-# testing2 = Puzzle([4,3,2,1,0,5,6,7,8])
-# testing2.move("left")
-# testing2.move("up")
-# testing2.move("left")
-# testing2.move("down")
-# testing2.move("left")
-# testing2.move("up")
-# testing2.printState()
+# testing1.solve("A*", "h1")
 
-# testing1.printState()
-# print("result")
-testing1.solve("A*", 2000)
-# testing2 = Puzzle([3,1,2,6,4,5,7,0,8])
-# testing2.heuristic("h2")
-#
-# testing3 = Puzzle([3,1,2,6,4,5,7,0,8])
-# testing2.heuristic("h2")
+print("\nHEURISTIC TESTING")
+print("testing heuristics in eightPuzzle file because heuristics do not have print function")
+testingHeuristics = Puzzle()
+print("scrambleState 20 times")
+testingHeuristics.scrambleState(20)
+print("testing heuristic h1:", testingHeuristics.heuristic("h1"))
+print("testing heuristic h2:", testingHeuristics.heuristic("h2"))
