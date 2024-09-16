@@ -9,3 +9,6 @@ solve A* h2
 solve A*
 # testing maxNodes error
 solve A* h1 maxnodes=10
+# testing to show repeated state checking at work
+setState 1 2 3 4 0 5 6 7 8
+solve A* h2

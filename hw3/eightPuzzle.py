@@ -458,6 +458,8 @@ class Puzzle:
             print("Error: maxnodes limit", maxNode, "reached")
         elif result == "heuristic not provided for A* search":
             print("Error: Heuristic required for A* search and not provided")
+        elif result == "Error: no solution found":
+            print("Error: no solution found")
         # given the last node, go through the prior states that brough it here until the initial state is reached
         # print the moves onto terminal backwards
         else:
@@ -635,6 +637,8 @@ class Puzzle:
                 heapq.heapify(possibleStates)
         if nodeCount > maxNodes:
             return "Error: maxnodes limit", 0, maxNodes
+        else:
+            return "Error: no solution found", 0, maxNodes
 
 
 class Node:
@@ -730,11 +734,8 @@ def main():
 if __name__ == "__main__":
     main()
 
-# testing1 = Puzzle([3, 1, 2, 6, 0, 5, 7, 4, 8])
-# testing1.solve("A*", "h1")
-
-print("\nHEURISTIC TESTING")
-print("testing heuristics in eightPuzzle file because heuristics do not have print function")
+print("HEURISTIC TESTING")
+print("testing heuristics in eightPuzzle file because heuristics do not have print")
 testingHeuristics = Puzzle()
 print("scrambleState 20 times")
 testingHeuristics.scrambleState(20)
