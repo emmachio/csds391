@@ -443,6 +443,8 @@ class Puzzle:
             # visited = linkedList(selfNode)
             result, nodeCount = self.dsfRecursive(self, goalState, maxNode, None, visited, None)
             nodeCount = maxNode - nodeCount
+        elif type == "A*":
+            result, steps, nodeCount = self.Asearch("h2", maxNode)
         # checks if it is an error due to the maximum number of nodes being reached
         if result=="Error: maxnodes limit":
             print("Error: maxnodes limit", maxNode, "reached")
@@ -456,6 +458,7 @@ class Puzzle:
             # nodeCount is the number of nodes that were created
             print("Nodes created during search:", nodeCount)
             # resultStack is the stack of the solution states and therefore the solution length
+            print("steps", steps)
             print("Solution length:", len(resultStack))
             print("Move sequence:")
             while len(resultStack) > 0:
@@ -482,135 +485,134 @@ class Puzzle:
     def Asearch(self, heuristicType, maxNodes=1000):
         # keeping track of the amount of nodes made
         nodeCount = 0
-        counter = 0
         # using the heuristic to keep track of cost
-        cost = self.heuristic(heuristicType)
+        heuristic = self.heuristic(heuristicType)
+        # visited = deque()
         # making a priority queue for the possible states
         possibleStates = []
         # making a queue to keep track of all the visited nodes
         visited = deque()
+        steps=0
         # adding the first state into the possibleStates queue
-        counter+=1
-        possibleStates.append((0,-1,Node(self)))
-        # adding one to the amount of nodes creates
         nodeCount =+ 1
+        firstNode = Node(self)
+        possibleStates.append((heuristic,-1,nodeCount,steps,firstNode))
+        # adding one to the amount of nodes creates
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
-        while len(possibleStates) != 0:
+        while len(possibleStates) != 0 and nodeCount <= maxNodes:
+            # print("nodeCount:", nodeCount)
             current = heapq.heappop(possibleStates)
-            currentCost = current[0]
-            currentNode = current[2]
-            print(currentNode.getState().printState())
+            steps = current[3]
+            currentNode = current[4]
+            visited.append(currentNode.getState().getState())
+            # print(currentNode.getState().printState())
             if currentNode.getState().equals(goalState):
-                return currentNode
+                return currentNode, steps, nodeCount
             # adding state of moving left
             leftArray = currentNode.getState().moveResult("left")
-            if not isinstance(leftArray, str):
+            if (not isinstance(leftArray, str)) and (leftArray not in visited):
                 leftPuzzle = Puzzle(leftArray)
-                cost = leftPuzzle.heuristic(heuristicType)
-                leftNode = Node(leftPuzzle)
+                heuristic = leftPuzzle.heuristic(heuristicType)
+                nodeCount = nodeCount+1
+                leftNode = Node(leftPuzzle, "left")
                 leftNode.setPrev(currentNode)
-                counter+=1
                 index=-1
                 i = -1
                 for item in possibleStates:
                     i+=1
-                    if item[2].getState().equals(leftPuzzle):
+                    if item[4].getState().equals(leftPuzzle):
                         index = i
-                print(index)
-                print("left puzzle:", leftPuzzle.getState(), currentCost)
                 if index != -1:
-                    if possibleStates[index][0] > cost+currentCost:
-                        possibleStates[index][0] = cost+currentCost
-                        possibleStates[index][2] = leftNode
+                    if possibleStates[index][3] > steps+1:
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,leftNode)
+                        # possibleStates[index][3] = steps
+                        # possibleStates[index][4] = leftNode
                 else:
-                    possibleStates.append((cost+1, 1, leftNode))
+                    possibleStates.append((heuristic+steps, 1,nodeCount,steps+1, leftNode))
                 heapq.heapify(possibleStates)
             # adding state of moving right
             rightArray = currentNode.getState().moveResult("right")
-            # print("right array:",rightArray)
-            if not isinstance(rightArray, str):
+            if (not isinstance(rightArray, str)) and (rightArray not in visited):
                 rightPuzzle = Puzzle(rightArray)
-                cost = rightPuzzle.heuristic(heuristicType)
-                rightNode = Node(rightPuzzle)
+                heuristic = rightPuzzle.heuristic(heuristicType)
+                nodeCount = nodeCount+1
+                rightNode = Node(rightPuzzle, "right")
                 rightNode.setPrev(currentNode)
-                counter+=1
                 index = -1
                 i = -1
                 for item in possibleStates:
                     i+=1
-                    if item[2].getState().equals(rightPuzzle):
+                    if item[4].getState().equals(rightPuzzle):
                         index = i
-                # print(index)
-                # print("right puzzle:", rightPuzzle.getState(), currentCost)
                 if index != -1:
-                    if possibleStates[index][0] > cost+currentCost:
-                        possibleStates[index][0] = cost+currentCost
-                        possibleStates[index][2] = rightNode
+                    if possibleStates[index][3] > steps+1:
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,rightNode)
+                        # possibleStates[index][3] = steps
+                        # possibleStates[index][4] = rightNode
                 else:
-                    possibleStates.append((cost+1, 2, rightNode))
-                for item in possibleStates:
-                    print(item[0])
-                    print(item[1])
-                    print(item[2].getState().getState())
-                heapq.heapify(possibleStates)
-            # adding state of moving up
-            # print("up")
+                    possibleStates.append((heuristic+steps, 2,nodeCount, steps+1, rightNode))
+                # print(possibleStates)
+                # for item in possibleStates:
+                #     print(item[4].getState().getState())
+                # heapq.heapify(possibleStates)
             upArray = currentNode.getState().moveResult("up")
-            if not isinstance(upArray, str):
+            if (not isinstance(upArray, str)) and (upArray not in visited):
                 upPuzzle = Puzzle(upArray)
                 cost = upPuzzle.heuristic(heuristicType)
-                upNode = Node(upPuzzle)
+                nodeCount = nodeCount+1
+                upNode = Node(upPuzzle, "up")
                 upNode.setPrev(currentNode)
-                counter+=1
                 index = -1
                 i = -1
+                # steps3 = steps+1
                 for item in possibleStates:
                     i+=1
-                    if item[2].getState().equals(upPuzzle):
+                    if item[4].getState().equals(upPuzzle):
                         index = i
-                # print(index)
-                # print("up puzzle:", upPuzzle.getState(), currentCost)
                 if index != -1:
-                    if possibleStates[index][0] > cost+currentCost:
-                        possibleStates[index][0] = cost+currentCost
-                        possibleStates[index][2] = upNode
+                    if possibleStates[index][3] > steps+1:
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,upNode)
+                        # possibleStates[index][3] = steps
+                        # possibleStates[index][4] = upNode
                 else:
-                    possibleStates.append((cost+1, 3, upNode))
+                    possibleStates.append((heuristic+steps, 3,nodeCount, steps+1,upNode))
                 heapq.heapify(possibleStates)
             # adding state of moving down
             downArray = currentNode.getState().moveResult("down")
-            if not isinstance(downArray, str):
+            if (not isinstance(downArray, str)) and (downArray not in visited):
                 downPuzzle = Puzzle(downArray)
-                # upPuzzle.printState()
                 cost = downPuzzle.heuristic(heuristicType)
-                downNode = Node(downPuzzle)
+                nodeCount = nodeCount+1
+                downNode = Node(downPuzzle, "down")
                 downNode.setPrev(currentNode)
-                counter+=1
                 index = -1
                 i = -1
+                steps4 = steps+1
                 for item in possibleStates:
                     i+=1
-                    if item[2].getState().equals(downPuzzle):
+                    if item[4].getState().equals(downPuzzle):
                         index = i
-                print(index)
-                print("right puzzle:", downPuzzle.getState(), currentCost)
                 if index != -1:
-                    if possibleStates[index][0] > cost+currentCost:
-                        possibleStates[index][0] = cost+currentCost
-                        possibleStates[index][2] = downNode
+                    if possibleStates[index][3] > steps+1:
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,downNode)
+                        # possibleStates[index][3] = steps
+                        # possibleStates[index][4] = downNode
                 else:
-                    possibleStates.append((cost+1, 4, downNode))
+                    possibleStates.append((heuristic+steps, 4, nodeCount,steps+1,downNode))
                 heapq.heapify(possibleStates)
+        if nodeCount > maxNodes:
+            return "Error: maxnodes limit", 0, maxNodes
 
 
 class Node:
 
     # constructor that sets the currentState to the provided Node and everything else as none
-    def __init__(self, givenState, move="none"):
+    def __init__(self, givenState, move="none", heuristic=0):
         self.currentState = givenState
         self.nextNode = None
         self.previousNode = None
         self.moveDone = move
+        self.heuristic = heuristic
 
     # function that sets the current state as given state
     def setState(self, givenState):
@@ -628,9 +630,8 @@ class Node:
     def setMove(self, move):
         self.moveDone = move
 
-    def setCost(self, cost):
-        self.cost = cost
-
+    def setHeuristic(self, newHeuristic):
+        self.heuristic = newHeuristic
     # function that returns the state
     def getState(self):
         return  self.currentState
@@ -646,8 +647,8 @@ class Node:
     def getMove(self):
         return self.moveDone
 
-    def getCost(self):
-        return self.cost
+    def getHeuristic(self):
+        return self.heuristic
 
     # function that returns whether or not the Node has next
     def hasNext(self):
@@ -696,12 +697,17 @@ def main():
 if __name__ == "__main__":
     main()
 
-# testing1 = Puzzle([0,1,2,3,4,5,6,7,8])
-# testing1.move("down")
+# testing1 = Puzzle([4,2,5,7,0,3,1,6,8])
+# testing1.printState()
+testing1 = Puzzle()
+testing1.scrambleState(200)
+# print(testing1.move("left"))
+# testing1.printState()
+# print(testing1.move("down"))
+# testing1.printState()
 # testing1.move("down")
 # testing1.move("right")
 # testing1.printState()
-# # testing1.scrambleState(20)
 # testing1.solve("dsf")
 # testing2 = Puzzle([4,3,2,1,0,5,6,7,8])
 # testing2.move("left")
@@ -713,7 +719,8 @@ if __name__ == "__main__":
 # testing2.printState()
 
 # testing1.printState()
-# print(testing1.Asearch("h2").getState().getState())
+# print("result")
+testing1.solve("A*", 2000)
 # testing2 = Puzzle([3,1,2,6,4,5,7,0,8])
 # testing2.heuristic("h2")
 #

@@ -1,33 +1,15 @@
-setState 3 1 2 6 4 5 7 0 8
+setState 4 2 5 7 0 3 1 6 8
+printState
 move left
-move up
+move down
 move right
+move up
 move right
 move up
 move left
 move left
 move down
 move right
-move right
 move up
-move left
-move left
-move down
-move right
-move right
-move up
-move left
-move left
-move down
-move right
-move right
-move up
-move left
-move left
-move down
-move right
-move right
-move up
-move left
 move left
 printState
