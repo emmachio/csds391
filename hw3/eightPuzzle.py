@@ -697,10 +697,10 @@ def main():
 if __name__ == "__main__":
     main()
 
-# testing1 = Puzzle([4,2,5,7,0,3,1,6,8])
-# testing1.printState()
-testing1 = Puzzle()
-testing1.scrambleState(200)
+testing1 = Puzzle([3, 1, 2, 6, 0, 5, 7, 4, 8])
+testing1.printState()
+# testing1 = Puzzle()
+# testing1.scrambleState(200)
 # print(testing1.move("left"))
 # testing1.printState()
 # print(testing1.move("down"))
