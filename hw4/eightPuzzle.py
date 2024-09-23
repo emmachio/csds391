@@ -2,7 +2,7 @@ import random
 import sys
 from collections import deque
 import heapq
-
+from scipy.optimize import fsolve
 class Puzzle:
     # global functions that keep track of the puzzle and the location of the blank tile
 
@@ -280,110 +280,84 @@ class Puzzle:
         return self.puzzle == providedPuzzle.getState()
 
     # dfs recursion function
-    def dfs(self, startState, goalState, direction, visited, limit, prevNode):
+    def dfs(self, startState, goalState, direction, visited, limit, prevNode, level):
         current = Node(startState, direction)
         current.setPrev(prevNode)
         currentList = current.getState().getState()
-        # print(direction, currentList, len(visited))
-        print(any(currentList == lst for lst in visited))
+        # if the state is the goalState, then return it
         if startState.equals(goalState):
-            print(len(visited))
-            print("DONE", limit)
-            return current
+            # print(len(visited))
+            # print("DONE", limit)
+            return current, limit, level
+        # if the max number of nodes have been reached
         if limit <= 0:
-            # print("no repetitions", len(set(visited)))
-            # set_of_tuples = set(tuple(lst) for lst in visited)
-            # print("repeated", len(set_of_tuples))
-            # print("visited", len(visited))
-            print("limit", limit)
-            return "Error: maxnodes reached"
-        if tuple(currentList) in visited:
-            print("repeated")
-            return "unsolved"
-        else:
-            visited.append(tuple(currentList))
-            # checking that the direction of the move is possible
-            leftArray = startState.moveResult("left")
-            if direction!= "right":
-                # print("left", limit)
-                # print("left",leftArray)
-                if not isinstance(leftArray, str):
-                    leftPuzzle = Puzzle(leftArray)
-                    leftNode = Node(leftPuzzle)
-                    leftNode.setPrev(current)
-                    # if visited.contains(leftNode) == False:
-                    if not tuple(leftArray) in visited:
-                        result = self.dfs(leftPuzzle, goalState, "left", visited, limit-1, current)
-                        # print("left",isinstance(result,str))
-                        if (result == "Error: maxnodes reached" or isinstance(result, Node)) and result != None:
-                            print("result", result)
-                            return result
-                    else:
-                        print("repeated")
+            return "Error: maxnodes limit", limit, level
+        # print(direction, limit, tuple(currentList))
+        # add the current state into the current list of visited nodes
+        visited.append(tuple(currentList))
 
-            # checking that the direction of the move is possible
-            rightArray = startState.moveResult("right")
-            if direction!= "left":
-                # print("right", limit)
-                # print("right",rightArray)
-                if not isinstance(rightArray, str):
-                    rightPuzzle = Puzzle(rightArray)
-                    rightNode = Node(rightPuzzle)
-                    rightNode.setPrev(current)
-                    # if visited.contains(rightNode) == False:
-                    if not tuple(rightArray) in visited:
-                        result = self.dfs(rightPuzzle, goalState, "right", visited, limit-1, current)
-                        # print("right",isinstance(result,str))
-                        if (result == "Error: maxnodes reached" or isinstance(result, Node)) and result != None:
-                            print("result", result)
-                            return result
-                    else:
-                        print("repeated")
+        # checking that the direction of the move is possible
+        leftArray = startState.moveResult("left")
+        # making sure that the algorithm does not loop by going right and then left
+        if direction!= "right":
+            if not isinstance(leftArray, str):
+                leftPuzzle = Puzzle(leftArray)
+                leftNode = Node(leftPuzzle)
+                leftNode.setPrev(current)
+                if not tuple(leftArray) in visited:
+                    result = self.dfs(leftPuzzle, goalState, "left", visited, limit-1, current, level+1)
+                    if result != None and (result[0] == "Error: maxnodes limit" or isinstance(result[0], Node)):
+                        return result
+                else:
+                    return "repeat", limit, level
+
+        # checking that the direction of the move is possible
+        rightArray = startState.moveResult("right")
+        # making sure that the algorithm does not loop by going left and then right
+        if direction!= "left":
+            if not isinstance(rightArray, str):
+                rightPuzzle = Puzzle(rightArray)
+                rightNode = Node(rightPuzzle)
+                rightNode.setPrev(current)
+                if not tuple(rightArray) in visited:
+                    result = self.dfs(rightPuzzle, goalState, "right", visited, limit-1, current, level+1)
+                    if result != None and (result[0] == "Error: maxnodes limit" or isinstance(result[0], Node)):
+                        return result
+                else:
+                    return "repeat", limit, level
 
 
-            # print("up", limit)
-            # checking that the direction of the move is possible
-            upArray = startState.moveResult("up")
-            if direction!= "down":
-                # print("up",upArray)
-                if not isinstance(upArray, str):
-                    upPuzzle = Puzzle(upArray)
-                    upNode = Node(upPuzzle)
-                    upNode.setPrev(current)
-                    # if visited.contains(upNode) == False:
-                    if not tuple(upArray) in visited:
-                        result = self.dfs(upPuzzle, goalState, "up", visited, limit-1, current)
-                        # print("up",isinstance(result,str))
-                        if (result == "Error: maxnodes reached" or isinstance(result, Node)) and result != None:
-                            print("result", result)
-                            return result
-                    else:
-                        print("repeated")
+        # checking that the direction of the move is possible
+        upArray = startState.moveResult("up")
+        # making sure that the algorithm does not loop by going down and then up
+        if direction!= "down":
+            if not isinstance(upArray, str):
+                upPuzzle = Puzzle(upArray)
+                upNode = Node(upPuzzle)
+                upNode.setPrev(current)
+                if not tuple(upArray) in visited:
+                    result = self.dfs(upPuzzle, goalState, "up", visited, limit-1, current, level +1)
+                    if result != None and (result[0] == "Error: maxnodes limit" or isinstance(result[0], Node)):
+                        return result
+                else:
+                    return "repeat", limit
 
-            # checking that the direction of the move is possible
-            downArray = startState.moveResult("down")
-            if direction!= "up":
-                # print("down", limit)
-                # print("down",downArray)
-                if not isinstance(downArray, str):
-                    downPuzzle = Puzzle(downArray)
-                    downNode = Node(downPuzzle)
-                    downNode.setPrev(current)
-                    # if visited.contains(downNode) == False:
-                    if not tuple(downArray) in visited:
-                        result = self.dfs(downPuzzle, goalState, "down", visited, limit-1, current)
-                        # print("down",isinstance(result,str))
-                        if (result == "Error: maxnodes reached" or isinstance(result, Node)) and result != None:
-                            print("result", result)
-                            return result
-                    else:
-                        print("repeated")
+        # checking that the direction of the move is possible
+        downArray = startState.moveResult("down")
+        # making sure that the algorithm does not loop by going up and then down
+        if direction!= "up":
+            if not isinstance(downArray, str):
+                downPuzzle = Puzzle(downArray)
+                downNode = Node(downPuzzle)
+                downNode.setPrev(current)
+                if not tuple(downArray) in visited:
+                    result = self.dfs(downPuzzle, goalState, "down", visited, limit-1, current, level+1)
+                    if result != None and (result[0] == "Error: maxnodes limit" or isinstance(result[0], Node)):
+                        return result
+                else:
+                    return "repeat", limit
 
-            return "unsolved"
-            # if isinstance(leftArray, str) and isinstance(rightArray, str) and isinstance(upArray, str) and isinstance(downArray, str):
-            #     return "unsolved"
-            # print("unsolved", limit)
-            # return Node(Puzzle([0,0,0,0,0,0,0,0,0])), limit
+        return "unsolvable", limit
 
     # startState and goalState are Puzzle classes
     def dfsRecursive(self, startState, goalState, limit, direction, visited, prevNode):
@@ -456,88 +430,23 @@ class Puzzle:
                     if not isinstance(result[0], str):
                         return result
         return "none", limit
-    # def dfsRecursive(self, startState, goalState, limit, direction, visited, prevNode):
-    #     # current is the Node of the current state we are in and direction is what the prior state
-    #     # had to move in order to get to current
-    #     # set that the state prior to current was the state
-    #     current = Node(startState, direction)
-    #     current.setPrev(prevNode)
-    #     currentArray = current.getState().getState()
-    #     # if the state that was found is the desired end state, then return the state
-    #     if goalState.equals(startState):
-    #         return current, limit
-    #     # if the maximum number of nodes have been created, then exit and return error
-    #     elif limit == 0:
-    #         return "Error: maxnodes limit", limit
-    #     # checks to see if the current state has been visited before, if it has been then the algorithm
-    #     # looped and it returns that this is a failed path
-    #     if current in visited:
-    #         return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed"), limit
-    #     else:
-    #         # add that now current has been visited
-    #         visited.append(current)
-    #         # making sure that if the state being checked is from moving the blank tile right,
-    #         # we do not go back to the prior state by moving the blank tile left - will cause infinite loop
-    #         if direction != "right":
-    #             # checking that the direction of the move is possible
-    #             leftArray = current.getState().moveResult("left")
-    #             if not isinstance(leftArray, str):
-    #                 leftPuzzle = Puzzle(leftArray)
-    #                 result = self.dfsRecursive(leftPuzzle, goalState, limit-1, "left", visited, current)
-    #                 if not isinstance(result, str):
-    #                     return result
-    #
-    #         # making sure that if the state being checked is from moving the blank tile left,
-    #         # we do not go back to the prior state by moving the blank tile right - will cause infinite loop
-    #         if direction != "left":
-    #         # checking that the direction of the move is possible
-    #             rightArray = current.getState().moveResult("right")
-    #             if not isinstance(rightArray, str):
-    #                 rightPuzzle = Puzzle(rightArray)
-    #                 result = self.dfsRecursive(rightPuzzle, goalState, limit-1, "right", visited, current)
-    #                 if not isinstance(result, str):
-    #                     return result
-    #
-    #         # making sure that if the state being checked is from moving the blank tile down,
-    #         # we do not go back to the prior state by moving the blank tile up - will cause infinite loop
-    #         if direction != "down":
-    #             # checking that the direction of the move is possible
-    #             upArray = current.getState().moveResult("up")
-    #             if not isinstance(upArray, str):
-    #                 upPuzzle = Puzzle(upArray)
-    #                 result = self.dfsRecursive(upPuzzle, goalState, limit-1, "up", visited, current)
-    #                 if not isinstance(result, str):
-    #                     return result
-    #
-    #         # making sure that if the state being checked is from moving the blank tile up,
-    #         # we do not go back to the prior state by moving the blank tile down - will cause infinite loop
-    #         if direction != "up":
-    #             # checking that the direction of the move is possible
-    #             downArray = current.getState().moveResult("down")
-    #             if not isinstance(downArray, str):
-    #                 downPuzzle = Puzzle(downArray)
-    #                 result = self.dfsRecursive(downPuzzle, goalState, limit-1, "down", visited, current)
-    #                 if not isinstance(result, str):
-    #                     return result
-    #     return Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
-
 
     # bfs function
-    def bfsSearchHelper(self, goalState, startState, maxNode):
+    def bsfSearchHelper(self, goalState, startState, maxNode):
         # a node of the initial state is made and marked as the initial state
         initialNode = Node(startState, "initial")
         finalNode = Node(Puzzle([0,0,0,0,0,0,0,0,0]), "failed")
         nodeCount = 1
+        depth = 0
         # checks if the state that we were given is equal to the desired goal state
         if goalState.equals(startState):
-            return initialNode, nodeCount
+            return initialNode, nodeCount, depth
         else:
             # frontier is a queue of Nodes
             frontier = deque()
             frontierSize = 0
-            # reached is a linked list of array of the Puzzle
-            reached = []
-            # reached = linkedList(Node(Puzzle([0,0,0,0,0,0,0,0,0]), "testing"))
+            # reached is a linked list of Nodes
+            reached = linkedList(Node(Puzzle([0,0,0,0,0,0,0,0,0]), "testing", 0))
             # add the initialNode into the frontier and reached array
             frontier.append(initialNode)
             frontierSize = frontierSize+1
@@ -545,22 +454,19 @@ class Puzzle:
             # current is the Node that was popped out of the queue
             current = frontier.popleft()
             frontierSize = frontierSize-1
+            depth = current.getLevel()
 
             # out of the four states that are possible, checking the one that is left
             leftArray = current.getState().moveResult("left")
             if not isinstance(leftArray, str):
-                # creating the Puzzle and Node for the state if the blank is moved left
                 leftPuzzle = Puzzle(leftArray)
-                leftNode = Node(leftPuzzle, "left")
-                # incrementing the number of nodes created
+                leftNode = Node(leftPuzzle, "left", depth+1)
                 nodeCount = nodeCount + 1
                 leftNode.setPrev(current)
-                # if this state is the goalState, then return the node
                 if leftNode.getState().equals(goalState):
-                    return leftNode, nodeCount
-                # if the state has not been reached before, then add it to reached and frontier
-                elif not (leftArray in reached):
-                    reached.append(leftArray)
+                    return leftNode, nodeCount, depth+1
+                elif reached.contains(leftNode) != True:
+                    reached.add(leftNode)
                     frontier.append(leftNode)
                     frontierSize = frontierSize+1
 
@@ -568,13 +474,13 @@ class Puzzle:
             rightArray = current.getState().moveResult("right")
             if not isinstance(rightArray, str):
                 rightPuzzle = Puzzle(rightArray)
-                rightNode = Node(rightPuzzle, "left")
+                rightNode = Node(rightPuzzle, "right", depth+1)
                 nodeCount = nodeCount + 1
                 rightNode.setPrev(current)
                 if rightNode.getState().equals(goalState):
-                    return rightNode, nodeCount
-                elif not (rightArray in reached):
-                    reached.append(rightArray)
+                    return rightNode, nodeCount, depth+1
+                elif reached.contains(rightNode) != True:
+                    reached.add(rightNode)
                     frontier.append(rightNode)
                     frontierSize = frontierSize+1
 
@@ -582,13 +488,13 @@ class Puzzle:
             upArray = current.getState().moveResult("up")
             if not isinstance(upArray, str):
                 upPuzzle = Puzzle(upArray)
-                upNode = Node(upPuzzle, "up")
+                upNode = Node(upPuzzle, "up", depth+1)
                 nodeCount = nodeCount + 1
                 upNode.setPrev(current)
                 if upNode.getState().equals(goalState):
-                    return upNode, nodeCount
-                elif not (upPuzzle in reached):
-                    reached.append(upPuzzle)
+                    return upNode, nodeCount, depth+1
+                elif reached.contains(upNode) != True:
+                    reached.add(upNode)
                     frontier.append(upNode)
                     frontierSize = frontierSize+1
 
@@ -596,18 +502,19 @@ class Puzzle:
             downArray = current.getState().moveResult("down")
             if not isinstance(downArray, str):
                 downPuzzle = Puzzle(downArray)
-                downNode = Node(downPuzzle, "down")
+                downNode = Node(downPuzzle, "down", depth+1)
                 nodeCount = nodeCount + 1
                 downNode.setPrev(current)
                 if downNode.getState().equals(goalState):
-                    return downNode, nodeCount
-                elif not (downPuzzle in reached):
-                    reached.append(downPuzzle)
+                    return downNode, nodeCount, depth+1
+                elif reached.contains(downNode) != True:
+                    reached.add(downNode)
                     frontier.append(downNode)
                     frontierSize = frontierSize+1
+            depth = depth + 1
         if nodeCount >= maxNode:
-            return "Error: maxnodes limit", maxNode
-        return finalNode, nodeCount
+            return "Error: maxnodes limit", maxNode, depth
+        return finalNode, nodeCount, depth
 
 # solve function that incorporates either bsf, dsf, or A*, depending on the input
     def solve(self, type, heuristic = None ,maxNode = 1000):
@@ -616,18 +523,21 @@ class Puzzle:
         nodeCount = 0
         resultStack = deque()
         if type == "BFS" or type == "bfs":
-            result, nodeCount = self.bfsSearchHelper(goalState, self, maxNode)
+            result, nodeCount, depth = self.bsfSearchHelper(goalState, self, maxNode)
         elif type == "DFS" or type == "dfs":
             # creating an empty linked list for the nodes that have been visited
-            visited = deque()
+            visited = []
+            if maxNode > 900:
+                print("maxNode limit has been adjusted to be 900 since anything above causes a recursion time out")
+                maxNode = 900
             # visited = linkedList(selfNode)
-            result, dfsnodeCount = self.dfsRecursive(self, goalState, maxNode, None, visited, None)
+            result, dfsnodeCount, level = self.dfs(self, goalState, None, visited, maxNode, None,0)
             nodeCount = maxNode - dfsnodeCount
         elif type == "A*":
             if heuristic == None or heuristic == "":
                 result = "heuristic not provided for A* search"
             else:
-                result, steps, nodeCount = self.Asearch(heuristic, maxNode)
+                result, steps, nodeCount, depth = self.Asearch(heuristic, maxNode)
         # checks if it is an error due to the maximum number of nodes being reached
         if result == "Error: maxnodes limit":
             print("Error: maxnodes limit", maxNode, "reached")
@@ -680,6 +590,8 @@ class Puzzle:
     def Asearch(self, heuristicType, maxNodes=1000):
         # keeping track of the amount of nodes made
         nodeCount = 0
+        # keeping track of the depth of the tree
+        depth = 0
         # using the heuristic to keep track of cost
         heuristic = self.heuristic(heuristicType)
         # making a priority queue for the possible states
@@ -693,7 +605,7 @@ class Puzzle:
         # creating the first node based off of the first state and adding it to the possibleStates queue
         firstNode = Node(self)
         # priority queue keeps track of: f(n), direction, nodeCount, number of steps, added node
-        possibleStates.append((heuristic,-1,nodeCount,steps,firstNode))
+        possibleStates.append((heuristic,-1,nodeCount,steps,firstNode, depth))
         # a goal state puzzle made so that we can determine when we reach the goal state
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         # while there are still possible states to check through
@@ -703,11 +615,13 @@ class Puzzle:
             # taking out the current node and the number of steps
             steps = current[3]
             currentNode = current[4]
+            # depth of the current tree
+            currentDepth = current[5]
             # this is the shortest path to the node so add it to the visited queue for repeated state checking
             visited.append(currentNode.getState().getState())
             # if the node popped out is equal to the goal state then that means that is the shortest path to the goalState
             if currentNode.getState().equals(goalState):
-                return currentNode, steps, nodeCount
+                return currentNode, steps, nodeCount, currentDepth
             # adding state of moving left if it is possible and not an already visited state
             leftArray = currentNode.getState().moveResult("left")
             if (not isinstance(leftArray, str)) and (leftArray not in visited):
@@ -719,7 +633,7 @@ class Puzzle:
                 leftNode = Node(leftPuzzle, "left")
                 leftNode.setPrev(currentNode)
                 if leftPuzzle.equals(goalState):
-                    return leftNode, steps, nodeCount
+                    return leftNode, steps+1, nodeCount, currentDepth+1
                 index=-1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -730,10 +644,10 @@ class Puzzle:
                 if index != -1:
                     # if the state is already in the PQ and the cost is less, then replace the value
                     if possibleStates[index][3] > steps+1:
-                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,leftNode)
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,leftNode, currentDepth+1)
                 else:
                     # if the state is not in PQ, add the state into the PQ
-                    possibleStates.append((heuristic+steps, 1,nodeCount,steps+1, leftNode))
+                    possibleStates.append((heuristic+steps, 1,nodeCount,steps+1, leftNode, currentDepth+1))
                 # sort the heap so that everything is in order
                 heapq.heapify(possibleStates)
             # adding state of moving right if it is possible
@@ -747,7 +661,7 @@ class Puzzle:
                 rightNode = Node(rightPuzzle, "right")
                 rightNode.setPrev(currentNode)
                 if rightPuzzle.equals(goalState):
-                    return rightNode, steps, nodeCount
+                    return rightNode, steps+1, nodeCount, currentDepth+1
                 index = -1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -758,10 +672,10 @@ class Puzzle:
                 if index != -1:
                     # if the state is already in the PQ and the cost is less, then replace the value
                     if possibleStates[index][3] > steps+1:
-                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,rightNode)
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,rightNode, currentDepth+1)
                 else:
                     # if the state is not in PQ, add the state into the PQ
-                    possibleStates.append((heuristic+steps, 2,nodeCount, steps+1, rightNode))
+                    possibleStates.append((heuristic+steps, 2,nodeCount, steps+1, rightNode, currentDepth+1))
                 # sort the heap so that everything is in order
                 heapq.heapify(possibleStates)
             # adding state of moving up if it is possible
@@ -774,7 +688,7 @@ class Puzzle:
                 upNode = Node(upPuzzle, "up")
                 upNode.setPrev(currentNode)
                 if upPuzzle.equals(goalState):
-                    return upNode, steps, nodeCount
+                    return upNode, steps+1, nodeCount, currentDepth+1
                 index = -1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -785,10 +699,10 @@ class Puzzle:
                 if index != -1:
                     # if the state is already in the PQ and the cost is less, then replace the value
                     if possibleStates[index][3] > steps+1:
-                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,upNode)
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,upNode, currentDepth+1)
                 else:
                     # if the state is not in PQ, add the state into the PQ
-                    possibleStates.append((heuristic+steps, 3,nodeCount, steps+1,upNode))
+                    possibleStates.append((heuristic+steps, 3,nodeCount, steps+1,upNode, currentDepth+1))
                 # sort the heap so that everything is in order
                 heapq.heapify(possibleStates)
             # adding state of moving down if it is possible
@@ -801,7 +715,7 @@ class Puzzle:
                 downNode = Node(downPuzzle, "down")
                 downNode.setPrev(currentNode)
                 if downPuzzle.equals(goalState):
-                    return downNode, steps, nodeCount
+                    return downNode, steps+1, nodeCount, currentDepth+1
                 index = -1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -812,48 +726,89 @@ class Puzzle:
                 if index != -1:
                     # if the state is already in the PQ and the cost is less, then replace the value
                     if possibleStates[index][3] > steps+1:
-                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,downNode)
+                        possibleStates[index] = (heuristic+steps,possibleStates[index][1],possibleStates[index][2],steps+1,downNode, currentDepth+1)
                 else:
                     # if the state is not in PQ, add the state into the PQ
-                    possibleStates.append((heuristic+steps, 4, nodeCount,steps+1,downNode))
+                    possibleStates.append((heuristic+steps, 4, nodeCount,steps+1,downNode, currentDepth+1))
                 # sort the heap so that everything is in order
                 heapq.heapify(possibleStates)
         if nodeCount > maxNodes:
-            return "Error: maxnodes limit", 0, maxNodes
+            return "Error: maxnodes limit", 0, maxNodes, depth
         else:
-            return "Error: no solution found", 0, maxNodes
+            return "Error: no solution found", 0, maxNodes, depth
+
+    def equation(self, b, d):
+        result = 0.0
+        for i in range(d+1):
+            result = result + (b**d)
+        return result
+
+    # the lower the effective branching factor, the more efficient the algorithm is
+    def effectiveBF(self, N, d):
+        result = 1
+        b = 1.0
+        while (int(result) != N+1):
+            if(result < N):
+                b = b*1.5
+            else:
+                b = b/2
+            result = self.equation(b, d)
+        return b
 
     def compareSolve(self, maxNode):
-        # dfs check
+        # bfs check
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         result = Node(Puzzle([0,0,0, 0,0,0, 0,0,0]), "failed")
         nodeCount = 0
         resultStack = deque()
-        bfsResult, bfsNodeCount = self.bfsSearchHelper(goalState, self, maxNode)
+        bfsResult, bfsNodeCount, bfsDepth = self.bsfSearchHelper(goalState, self, maxNode)
+        bfsLength = 0
+        if bfsResult != "Error: maxnodes limit":
+            while bfsResult.hasPrev():
+                bfsLength +=1
+                bfsResult = bfsResult.getPrev()
         # creating an empty linked list for the nodes that have been visited
-        visited = deque()
-        # visited = linkedList(selfNode)
-        dfsResult, nodeCount = self.dfsRecursive(self, goalState, maxNode, None, visited, None)
+        visited = []
+        # dfs check
+        dfsResult, nodeCount, dfsDepth = self.dfs(self, goalState, None, visited, maxNode, None,0)
         dfsNodeCount = maxNode - nodeCount
+        dfsLength = 0
+        if dfsResult != "Error: maxnodes limit":
+            while dfsResult.hasPrev():
+                dfsLength +=1
+                dfsResult = dfsResult.getPrev()
         result = "heuristic not provided for A* search"
-        h1result, h1steps, h1nodeCount = self.Asearch("h1", maxNode)
-        h2result, h2steps, h2nodeCount = self.Asearch("h2", maxNode)
+        h1result, h1steps, h1nodeCount, h1depth = self.Asearch("h1", maxNode)
+        h2result, h2steps, h2nodeCount, h2depth = self.Asearch("h2", maxNode)
         print("dfs node count:", dfsNodeCount)
+        print("dfs solution length:", dfsLength)
+        # print("dfs levels: ", dfsDepth)
+        if dfsNodeCount < 100:
+            print("dfs ebf", self.effectiveBF(dfsNodeCount, dfsDepth))
+        print("bfs solution length:", bfsLength)
+        print("a search h1 solution length:", h1steps)
+        print("a search h2 solution length:", h2steps)
         print("bfs node count:", bfsNodeCount)
-        print("a search h1:", h1nodeCount)
-        print("a search h2:", h2nodeCount)
+        print("a search h1 node count:", h1nodeCount)
+        print("a search h2 node count:", h2nodeCount)
+        # print("bfs levels: ", bfsDepth)
+        print("bfs ebf", self.effectiveBF(bfsNodeCount, bfsDepth))
+        # print("a search h1 levels: ", h1depth)
+        print("h1 ebf", self.effectiveBF(h1nodeCount, h1depth))
+        # print("a search h2 levels: ", h2depth)
+        print("h2 ebf", self.effectiveBF(h2nodeCount, h2depth))
 
 
 
 class Node:
 
     # constructor that sets the currentState to the provided Node and everything else as none
-    def __init__(self, givenState, move="none", heuristic=0):
+    def __init__(self, givenState, move="none", level=0):
         self.currentState = givenState
         self.nextNode = None
         self.previousNode = None
         self.moveDone = move
-        self.heuristic = heuristic
+        self.level = level
 
     # function that sets the current state as given state
     def setState(self, givenState):
@@ -871,8 +826,9 @@ class Node:
     def setMove(self, move):
         self.moveDone = move
 
-    def setHeuristic(self, newHeuristic):
-        self.heuristic = newHeuristic
+    def setLevel(self, level):
+        self.level = level
+
     # function that returns the state
     def getState(self):
         return  self.currentState
@@ -891,8 +847,8 @@ class Node:
     def getMove(self):
         return self.moveDone
 
-    def getHeuristic(self):
-        return self.heuristic
+    def getLevel(self):
+        return self.level
 
     # function that returns whether or not the Node has next
     def hasNext(self):
@@ -914,7 +870,7 @@ class linkedList:
         self.size = 1
 
     # adding into the linked list with the first node
-    def append(self, addedNode):
+    def add(self, addedNode):
         current = self.first
         while (current.hasNext()):
             current = current.getNext()
@@ -941,38 +897,13 @@ def main():
 if __name__ == "__main__":
     main()
 
-testing1 = Puzzle([0,1,2,3,4,5,6,7,8])
+# testing1 = Puzzle([0,1,2,3,4,5,6,7,8])
 # testing1.move("right")
 # testing1.move("right")
 # testing1.move("down")
-testing1.scrambleState(20)
-# solution: up, left, down, right, up, left
-goalState = Puzzle([0,1,2,3,4,5,6,7,8])
-visited = []
-testing1.printState()
-# testing1.solve("A*", "h2")
-print(testing1.dfs(testing1, goalState, None, visited, 900, None))
-# node1 = testing1.dfs(testing1, goalState, None, visited, 20, None)
-# current = node1
-# # print(current.getList())
-# while current.hasPrev():
-#     print(current.getMove())
-#     current = current.getPrev()
-# testing1.dfsRecursive(testing1, goalState, 900, None, visited,None)
-# testing1.solve("dfs","",900)
-# testing1.solve("bfs","",4000)
+# goalState = Puzzle([0,1,2,3,4,5,6,7,8])
+# print(testing1.bsfSearchHelper(goalState, testing1, 200))
+# testing1.scrambleState(48)
 # testing1.compareSolve(900)
-
-# print("HEURISTIC TESTING")
-# print("testing heuristics in eightPuzzle file because heuristics do not have print")
-# testingHeuristics = Puzzle()
-# print("scrambleState 20 times")
-# testingHeuristics.scrambleState(20)
-# print("testing heuristic h1:", testingHeuristics.heuristic("h1"))
-# print("testing heuristic h2:", testingHeuristics.heuristic("h2"))
-# None [4, 3, 2, 1, 0, 5, 6, 7, 8] 20
-# left [4, 3, 2, 0, 1, 5, 6, 7, 8] 19
-# up [0, 3, 2, 4, 1, 5, 6, 7, 8] 18
-# right [3, 0, 2, 4, 1, 5, 6, 7, 8] 17
-# right [3, 2, 0, 4, 1, 5, 6, 7, 8] 16
-# down [3, 2, 5, 4, 1, 0, 6, 7, 8] 15
+# visited = []
+# testing1.solve("dfs", "",100)
