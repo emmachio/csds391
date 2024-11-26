@@ -1,14 +1,2 @@
-setState 4 3 2 1 0 5 6 7 8
-move left
-move up
-move right
-move down
-move left
-move up
-# move up
-# move left
-# move down
-# move right
-# move up
-# move left
-printState
+scrambleState 20
+solve dfs maxnodes=20

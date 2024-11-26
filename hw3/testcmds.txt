@@ -1,6 +1,12 @@
-# arbitrarily scrambling a puzzle - setting
-scrambleState 20
 # A STAR SEARCH TESTING
+# arbitrarily scrambling a puzzle - Example 1
+scrambleState 20
+# testing solving the problem using heuristic 1
+solve A* h1
+# testing solving the problem using heuristic 2
+solve A* h2
+# arbitrarily scrambling a puzzle - Example 2
+scrambleState 30
 # testing solving the problem using heuristic 1
 solve A* h1
 # testing solving the problem using heuristic 2

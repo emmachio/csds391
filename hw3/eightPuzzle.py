@@ -434,7 +434,7 @@ class Puzzle:
             return "Error: maxnodes limit", maxNode
         return finalNode, nodeCount
 
-# solve function that incorporates both bsf and dsf, depending on the input
+# solve function that incorporates either bsf, dsf, or A*, depending on the input
     def solve(self, type, heuristic = None ,maxNode = 1000):
         goalState = Puzzle([0,1,2,3,4,5,6,7,8])
         result = Node(Puzzle([0,0,0, 0,0,0, 0,0,0]), "failed")
@@ -543,6 +543,8 @@ class Puzzle:
                 # creating the node based off the state of moving the blank tile left
                 leftNode = Node(leftPuzzle, "left")
                 leftNode.setPrev(currentNode)
+                if leftPuzzle.equals(goalState):
+                    return leftNode, steps, nodeCount
                 index=-1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -569,6 +571,8 @@ class Puzzle:
                 # creating the node based off the state of moving the blank tile right
                 rightNode = Node(rightPuzzle, "right")
                 rightNode.setPrev(currentNode)
+                if rightPuzzle.equals(goalState):
+                    return rightNode, steps, nodeCount
                 index = -1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -594,6 +598,8 @@ class Puzzle:
                 # creating the node based off the state of moving the blank tile up
                 upNode = Node(upPuzzle, "up")
                 upNode.setPrev(currentNode)
+                if upPuzzle.equals(goalState):
+                    return upNode, steps, nodeCount
                 index = -1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
@@ -619,6 +625,8 @@ class Puzzle:
                 nodeCount = nodeCount+1
                 downNode = Node(downPuzzle, "down")
                 downNode.setPrev(currentNode)
+                if downPuzzle.equals(goalState):
+                    return downNode, steps, nodeCount
                 index = -1
                 i = -1
                 # checking to see if the state created is already within the possibleStates PQ
